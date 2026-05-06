@@ -1,200 +1,823 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAuthStore } from "@/store/authStore";
-import { Card, Icon, Button, Badge } from "@/components";
+import { Icon } from "@/components";
 import { ROUTES, APPOINTMENT_STATUS } from "@/constants/appConstants";
-import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 
+// ── Animation helpers ────────────────────────────────────────────────────────
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1], delay },
+});
+
+const scaleIn = (delay = 0) => ({
+  initial: { opacity: 0, scale: 0.96 },
+  animate: { opacity: 1, scale: 1 },
+  transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1], delay },
+});
+
+// ── Greeting helper ───────────────────────────────────────────────────────────
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return { text: "Good Morning", emoji: "☀️" };
+  if (h < 17) return { text: "Good Afternoon", emoji: "🌤️" };
+  return { text: "Good Evening", emoji: "🌙" };
+}
+
+// ── Days-until helper ─────────────────────────────────────────────────────────
+function getDaysUntil(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(`${dateStr}T00:00:00`);
+  const diff = Math.round((target - today) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff > 0 && diff < 31) return `In ${diff} days`;
+  return null;
+}
+
+// ── Vitals data ───────────────────────────────────────────────────────────────
+const VITALS = [
+  {
+    key: "bp",
+    label: "Blood Pressure",
+    value: "120/80",
+    unit: "mmHg",
+    icon: "faHeartbeat",
+    trend: "Stable",
+    statusLabel: "Normal",
+    gradFrom: "#fff5f5",
+    gradTo: "#fff0f5",
+    ring: "ring-rose-100",
+    iconBg: "bg-rose-50",
+    iconColor: "text-rose-500",
+    dotColor: "bg-rose-400",
+    statusColor: "text-rose-500",
+  },
+  {
+    key: "hr",
+    label: "Heart Rate",
+    value: "72",
+    unit: "bpm",
+    icon: "faWind",
+    trend: "Healthy",
+    statusLabel: "Healthy",
+    gradFrom: "#f0fdf4",
+    gradTo: "#ecfdf5",
+    ring: "ring-emerald-100",
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-500",
+    dotColor: "bg-emerald-400",
+    statusColor: "text-emerald-500",
+  },
+];
+
+// ── Quick Actions ─────────────────────────────────────────────────────────────
+const QUICK_ACTIONS = [
+  {
+    icon: "faCalendarPlus",
+    label: "Book Now",
+    to: ROUTES.bookAppointment,
+    isPrimary: true,
+  },
+  {
+    icon: "faClipboardList",
+    label: "History",
+    to: ROUTES.medicalHistory,
+    isPrimary: false,
+  },
+  {
+    icon: "faCalendarDays",
+    label: "My Visits",
+    to: ROUTES.myAppointments,
+    isPrimary: false,
+  },
+  {
+    icon: "faCircleUser",
+    label: "Profile",
+    to: ROUTES.profile,
+    isPrimary: false,
+  },
+];
+
+// ── Status styling map ────────────────────────────────────────────────────────
+const STATUS_MAP = {
+  confirmed: {
+    label: "Confirmed",
+    dot: "bg-emerald-400",
+    badge: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  },
+  pending: {
+    label: "Pending",
+    dot: "bg-amber-400",
+    badge: "bg-amber-50 text-amber-700 border-amber-100",
+  },
+  completed: {
+    label: "Completed",
+    dot: "bg-slate-300",
+    badge: "bg-slate-50 text-slate-600 border-slate-200",
+  },
+  cancelled: {
+    label: "Cancelled",
+    dot: "bg-rose-300",
+    badge: "bg-rose-50 text-rose-600 border-rose-100",
+  },
+};
+
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function formatApptDate(dateStr) {
+  if (!dateStr) return { day: "--", month: "---", full: "Date TBD" };
+  const d = new Date(`${dateStr}T00:00:00`);
+  return {
+    day: String(d.getDate()).padStart(2, "0"),
+    month: MONTHS[d.getMonth()],
+    full: d.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    }),
+  };
+}
+
+// ── Shimmer Skeleton ──────────────────────────────────────────────────────────
+function Skeleton({ className = "" }) {
+  return (
+    <div
+      className={`relative overflow-hidden bg-slate-100 ${className}`}
+      style={{ borderRadius: "inherit" }}
+    >
+      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+    </div>
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 function PatientDashboard() {
   const { user } = useAuthStore();
-  const { data: appointmentsData, isLoading } = useAppointments({ patientId: user.id });
+  const { data: appointmentsData, isLoading } = useAppointments({
+    patientId: user.id,
+  });
+  const greeting = getGreeting();
+  const firstName = user?.name?.split(" ")[0] || "there";
 
   const stats = useMemo(() => {
-    if (!appointmentsData?.data) return { upcoming: [], next: null, totalVisits: 0 };
-    
+    if (!appointmentsData?.data)
+      return { upcoming: [], next: null, totalVisits: 0, allUpcoming: [] };
+
     const all = appointmentsData.data;
-    const completed = all.filter(a => a.status === APPOINTMENT_STATUS.COMPLETED);
+    const completed = all.filter(
+      (a) => a.status === APPOINTMENT_STATUS.COMPLETED,
+    );
     const upcoming = all
-      .filter(a => a.status === APPOINTMENT_STATUS.PENDING || a.status === APPOINTMENT_STATUS.CONFIRMED)
-      .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
+      .filter(
+        (a) =>
+          a.status === APPOINTMENT_STATUS.PENDING ||
+          a.status === APPOINTMENT_STATUS.CONFIRMED,
+      )
+      .sort(
+        (a, b) =>
+          new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`),
+      );
 
     return {
-      upcoming: upcoming.slice(1, 4),
+      allUpcoming: upcoming,
+      upcoming: upcoming.slice(1, 5),
       next: upcoming[0] || null,
-      totalVisits: completed.length
+      totalVisits: completed.length,
     };
   }, [appointmentsData]);
 
-  return (
-    <div className="space-y-10 pb-12">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <span className="hud-chip">Welcome back, {user?.name?.split(' ')[0]}</span>
-          <h1 className="mt-4 text-5xl font-black text-slate-900 uppercase tracking-tight">
-            Patient Dashboard
-          </h1>
-          <p className="mt-2 text-lg font-medium text-slate-500">
-            Manage your health journey and upcoming consultations.
-          </p>
-        </div>
-        <Link to={ROUTES.bookAppointment}>
-          <Button className="h-16 px-10 rounded-[24px] shadow-halo gap-3 text-lg">
-            <Icon name="faPlusCircle" />
-            Book Appointment
-          </Button>
-        </Link>
-      </header>
+  const nextDate = formatApptDate(stats.next?.date);
+  const daysUntil = getDaysUntil(stats.next?.date);
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Next Appointment - The most important thing */}
-        <Card className="lg:col-span-1 bg-slate-950 text-white border-none shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-brand-500/20 blur-3xl group-hover:bg-brand-500/30 transition-all duration-700" />
-          
-          <div className="relative z-10">
-            <div className="flex justify-between items-start mb-10">
-              <div className="h-14 w-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10">
-                <Icon name="faCalendarCheck" className="text-2xl text-brand-400" />
+  const handleQuickAction = (label) => {
+    toast(`Opening ${label}...`);
+  };
+
+  return (
+    <div className="relative  space-y-5 pb-28">
+      {/* ── 1. PERSONALIZED HEADER ────────────────────────────────────────── */}
+      <motion.header
+        {...fadeUp(0)}
+        className="relative overflow-hidden rounded-[28px] p-6"
+        style={{
+          background:
+            "linear-gradient(145deg, #f9f6f6 0%, #f0f7f4 48%, #f7f0f5 100%)",
+        }}
+      >
+        {/* Decorative blobs */}
+        <Link
+          className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full blur-3xl"
+          style={{ background: "rgba(126,99,99,0.12)" }}
+          onClick={() => handleQuickAction(action.label)}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-12 -left-10 h-44 w-44 rounded-full blur-3xl"
+          style={{ background: "rgba(140,200,170,0.14)" }}
+        />
+
+        <div className="relative flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            {/* Avatar */}
+            <div className="relative shrink-0">
+              <div
+                className="flex h-[58px] w-[58px] items-center justify-center rounded-full text-xl font-black text-white shadow-md ring-[3px] ring-white"
+                style={{
+                  background: "linear-gradient(135deg, #7e6363, #a88080)",
+                }}
+              >
+                {firstName.charAt(0).toUpperCase()}
               </div>
-              <Badge tone="success" className="bg-emerald-500/20 border-none text-emerald-400 font-black uppercase tracking-widest text-[10px]">
-                Next Priority
-              </Badge>
+              {/* Online indicator */}
+              <div className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
             </div>
 
-            {isLoading ? (
-              <div className="animate-pulse space-y-4">
-                <div className="h-8 bg-white/10 rounded-lg w-3/4" />
-                <div className="h-4 bg-white/5 rounded-lg w-1/2" />
+            <div>
+              <p className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                <span>{greeting.emoji}</span>
+                {greeting.text}
+              </p>
+              <h1 className="mt-0.5 text-[22px] font-black leading-none tracking-tight text-slate-900">
+                {firstName}!
+              </h1>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <p className="text-[10px] font-semibold text-slate-400">
+                  Health status: All good
+                </p>
               </div>
-            ) : stats.next ? (
-              <>
-                <h3 className="text-3xl font-black leading-tight">
-                  {new Date(stats.next.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                </h3>
-                <p className="text-xl font-bold text-brand-400 mt-2">at {stats.next.time}</p>
-                
-                <div className="mt-10 p-5 rounded-3xl bg-white/5 border border-white/10 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center font-bold text-xs">
-                      {stats.next.doctorName?.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Consultant</p>
-                      <p className="text-sm font-bold">{stats.next.doctorName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 pt-3 border-t border-white/5">
-                    <Icon name="faStethoscope" className="text-brand-400 text-xs" />
-                    <p className="text-sm font-medium text-white/70">{stats.next.serviceName}</p>
-                  </div>
-                </div>
-
-                <div className="mt-10 flex gap-3">
-                   <Button variant="accent" className="flex-1 h-12 rounded-xl">View Details</Button>
-                   <Button variant="ghost" className="h-12 w-12 rounded-xl border border-white/10 text-white hover:bg-white/5 p-0">
-                      <Icon name="faEllipsisV" />
-                   </Button>
-                </div>
-              </>
-            ) : (
-              <div className="py-10 text-center">
-                <p className="text-white/40 font-bold uppercase tracking-widest text-xs">No upcoming visits</p>
-                <Link to={ROUTES.bookAppointment} className="mt-4 block">
-                  <Button variant="accent" size="sm">Schedule Now</Button>
-                </Link>
-              </div>
-            )}
+            </div>
           </div>
-        </Card>
 
-        {/* Stats & Records */}
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
-           <Card className="bg-brand-50 border-brand-100 flex flex-col justify-between">
-              <div>
-                <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mb-4">Clinical Footprint</p>
-                <h3 className="text-5xl font-black text-slate-900">{stats.totalVisits}</h3>
-                <p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-[10px]">Previous Consultations</p>
-              </div>
-              <Link to={ROUTES.medicalHistory} className="mt-8">
-                <Button variant="outline" className="w-full border-brand-200 text-brand-600 bg-white hover:bg-brand-50 rounded-2xl">
-                   View Medical Records
-                </Button>
-              </Link>
-           </Card>
-
-           <Card title="Quick Vitals" description="Latest metrics from your records.">
-              <div className="grid grid-cols-2 gap-3 mt-6">
-                 {[
-                   { label: "BP", val: "120/80", tone: "rose" },
-                   { label: "Weight", val: "72 kg", tone: "brand" },
-                   { label: "Glucose", val: "95", tone: "emerald" },
-                   { label: "HR", val: "72 bpm", tone: "amber" },
-                 ].map((v, i) => (
-                   <div key={i} className={`p-4 rounded-2xl border bg-${v.tone}-50 border-${v.tone}-100`}>
-                      <p className={`text-[9px] font-black uppercase tracking-widest text-${v.tone}-500 mb-1`}>{v.label}</p>
-                      <p className="text-lg font-black text-slate-900">{v.val}</p>
-                   </div>
-                 ))}
-              </div>
-           </Card>
+          {/* Notification bell */}
+          <button className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 shadow-sm ring-1 ring-white backdrop-blur-sm transition-all hover:bg-white active:scale-95">
+            <Icon name="faBell" className="text-[13px] text-slate-500" />
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-rose-500" />
+          </button>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Upcoming Appointments List */}
-        <Card className="lg:col-span-2" title="Upcoming Schedule" description="Your confirmed and pending visits.">
-          <div className="mt-8 space-y-3">
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2].map(i => <div key={i} className="h-20 bg-slate-50 rounded-3xl animate-pulse" />)}
-              </div>
-            ) : stats.upcoming.length > 0 ? (
-              stats.upcoming.map((appt) => (
-                <div key={appt.id} className="group flex items-center justify-between p-5 rounded-[28px] bg-slate-50 border border-slate-100 hover:border-brand-200 hover:bg-white transition-all">
-                  <div className="flex items-center gap-5">
-                    <div className="h-12 w-12 rounded-2xl bg-white border border-slate-200 flex flex-col items-center justify-center leading-none">
-                      <span className="text-[10px] font-black text-slate-400 uppercase">{appt.date.split('-')[1]}</span>
-                      <span className="text-lg font-black text-slate-900">{appt.date.split('-')[2]}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900">{appt.serviceName}</h4>
-                      <p className="text-xs font-medium text-slate-500">Dr. {appt.doctorName} • {appt.time}</p>
-                    </div>
-                  </div>
-                  <Badge tone={appt.status === APPOINTMENT_STATUS.CONFIRMED ? 'success' : 'warning'} className="uppercase font-black text-[9px]">
-                    {appt.status}
-                  </Badge>
+        {/* Brand ribbon */}
+        <div className="relative mt-4 flex items-center gap-2.5 rounded-xl border border-white/70 bg-white/50 px-3.5 py-2.5 backdrop-blur-sm">
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+            style={{ background: "rgba(126,99,99,0.1)" }}
+          >
+            <Icon
+              name="faShieldHalved"
+              className="text-[11px] text-brand-600"
+            />
+          </div>
+          <p className="text-[11px] font-medium text-slate-500">
+            <span className="font-black text-slate-700">MediCore</span> · Your
+            trusted health companion
+          </p>
+        </div>
+      </motion.header>
+
+      {/* ── 2. QUICK ACTIONS ──────────────────────────────────────────────── */}
+      <motion.section {...fadeUp(0.05)}>
+        <div className="grid grid-cols-4 gap-3">
+          {QUICK_ACTIONS.map((action) => (
+            <Link key={action.label} to={action.to} className="group">
+              <div
+                className={`flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-all active:scale-95 ${
+                  action.isPrimary
+                    ? "text-white shadow-md"
+                    : "border border-slate-100 bg-white hover:border-brand-200 hover:shadow-sm"
+                }`}
+                style={
+                  action.isPrimary
+                    ? {
+                        background: "linear-gradient(135deg, #7e6363, #a08080)",
+                        boxShadow: "0 4px 16px rgba(126,99,99,0.3)",
+                      }
+                    : {}
+                }
+              >
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    action.isPrimary ? "bg-white/20" : "bg-brand-50"
+                  }`}
+                >
+                  <Icon
+                    name={action.icon}
+                    className={`text-sm ${
+                      action.isPrimary ? "text-white" : "text-brand-500"
+                    }`}
+                  />
                 </div>
-              ))
-            ) : (
-              <p className="text-center py-10 text-slate-400 font-medium">No other upcoming appointments.</p>
+                <span
+                  className={`text-[10px] font-black leading-tight ${
+                    action.isPrimary ? "text-white/90" : "text-slate-500"
+                  }`}
+                >
+                  {action.label}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* ── 3. NEXT APPOINTMENT HERO ──────────────────────────────────────── */}
+      <motion.section {...scaleIn(0.1)}>
+        <div className="mb-3 flex items-center justify-between px-0.5">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+            Next Appointment
+          </h2>
+          <Link
+            to={ROUTES.myAppointments}
+            className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:underline"
+          >
+            See All →
+          </Link>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="hero-sk"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="h-64 rounded-[28px]"
+            >
+              <Skeleton className="h-full rounded-[28px]" />
+            </motion.div>
+          ) : stats.next ? (
+            /* ── Has appointment ── */
+            <motion.div
+              key="hero-appt"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="relative overflow-hidden rounded-[28px] p-6 text-white"
+              style={{
+                background:
+                  "linear-gradient(145deg, #1e293b 0%, #0f172a 65%, #1c1828 100%)",
+              }}
+            >
+              {/* Glow orbs */}
+              <div
+                className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl"
+                style={{ background: "rgba(126,99,99,0.28)" }}
+              />
+              <div
+                className="pointer-events-none absolute -bottom-12 left-8 h-48 w-48 rounded-full blur-3xl"
+                style={{ background: "rgba(80,140,110,0.12)" }}
+              />
+
+              {/* Top status row */}
+              <div className="relative mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">
+                    Coming Up
+                  </span>
+                </div>
+                {daysUntil && (
+                  <div
+                    className="rounded-full px-3 py-1 text-[10px] font-black text-white/70"
+                    style={{
+                      background: "rgba(255,255,255,0.09)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    {daysUntil}
+                  </div>
+                )}
+              </div>
+
+              {/* Date + time */}
+              <div className="relative">
+                <h3 className="text-[28px] font-black leading-[1.1] tracking-tight">
+                  {nextDate.full}
+                </h3>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <Icon name="faClock" className="text-[10px] text-brand-400" />
+                  <p className="text-[15px] font-bold text-brand-300">
+                    at {stats.next.time}
+                  </p>
+                </div>
+              </div>
+
+              {/* Doctor info card */}
+              <div
+                className="relative mt-5 rounded-2xl p-3.5"
+                style={{
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.09)",
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black text-white"
+                    style={{
+                      background: "linear-gradient(135deg,#7e6363,#a08080)",
+                    }}
+                  >
+                    {stats.next.doctorName?.charAt(0) || "D"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-black text-white">
+                      Dr. {stats.next.doctorName}
+                    </p>
+                    <p className="text-[11px] text-white/40">
+                      {stats.next.specialty || "General Practitioner"}
+                    </p>
+                  </div>
+                  <span
+                    className="shrink-0 rounded-xl px-2.5 py-1 text-[10px] font-black text-brand-300"
+                    style={{
+                      background: "rgba(126,99,99,0.25)",
+                      border: "1px solid rgba(126,99,99,0.35)",
+                    }}
+                  >
+                    {stats.next.serviceName || "Consultation"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="relative mt-4 flex gap-2.5">
+                <Link to={ROUTES.myAppointments} className="flex-1">
+                  <button
+                    className="w-full rounded-2xl py-3 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:opacity-90 active:scale-95"
+                    style={{
+                      background: "linear-gradient(135deg, #7e6363, #9e7777)",
+                    }}
+                  >
+                    Manage Booking
+                  </button>
+                </Link>
+                <button
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white transition-all hover:bg-white/15 active:scale-95"
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                  title="Get Directions"
+                >
+                  <Icon name="faLocationDot" className="text-sm" />
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            /* ── Empty state ── */
+            <motion.div
+              key="hero-empty"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center rounded-[28px] border-2 border-dashed border-brand-100 bg-gradient-to-br from-brand-50/60 to-surface-100 px-8 py-14 text-center"
+            >
+              <div
+                className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                style={{
+                  background: "linear-gradient(135deg, #f9f6f6, #eef5f2)",
+                }}
+              >
+                <Icon
+                  name="faCalendarPlus"
+                  className="text-2xl text-brand-400"
+                />
+              </div>
+              <h3 className="text-[17px] font-black text-slate-800">
+                No upcoming appointments
+              </h3>
+              <p className="mt-1.5 max-w-[240px] text-[13px] leading-relaxed text-slate-400">
+                Take control of your health — book your first consultation in
+                seconds.
+              </p>
+              <Link to={ROUTES.bookAppointment} className="mt-6">
+                <button
+                  className="rounded-2xl px-7 py-3.5 text-[13px] font-black text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
+                  style={{
+                    background: "linear-gradient(135deg, #7e6363, #9e7777)",
+                    boxShadow: "0 6px 24px rgba(126,99,99,0.35)",
+                  }}
+                >
+                  Book Your First Appointment
+                </button>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.section>
+
+      {/* ── 4. HEALTH VITALS SNAPSHOT ─────────────────────────────────────── */}
+      <motion.section {...fadeUp(0.15)}>
+        <h2 className="mb-3 px-0.5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+          Health Snapshot
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          {VITALS.map((v) => (
+            <div
+              key={v.key}
+              className={`relative overflow-hidden rounded-2xl p-4 ring-1 ${v.ring}`}
+              style={{
+                background: `linear-gradient(145deg, ${v.gradFrom}, ${v.gradTo})`,
+              }}
+            >
+              {/* Decoration circle */}
+              <div
+                className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl"
+                style={{ background: "rgba(255,255,255,0.7)" }}
+              />
+
+              <div className="relative flex items-start justify-between">
+                <div
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ${v.ring}`}
+                >
+                  <Icon name={v.icon} className={`text-sm ${v.iconColor}`} />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className={`h-1.5 w-1.5 rounded-full ${v.dotColor}`} />
+                  <span className={`text-[9px] font-black ${v.statusColor}`}>
+                    {v.statusLabel}
+                  </span>
+                </div>
+              </div>
+
+              <div className="relative mt-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {v.label}
+                </p>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span className="text-[22px] font-black leading-none text-slate-900">
+                    {v.value}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-400">
+                    {v.unit}
+                  </span>
+                </div>
+                <p className="mt-1 text-[9px] font-semibold text-slate-400">
+                  {v.trend}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* ── 5. QUICK HEALTH STATS ─────────────────────────────────────────── */}
+      <motion.section {...fadeUp(0.19)}>
+        <h2 className="mb-3 px-0.5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+          Health Overview
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          {/* Total Visits */}
+          <Link to={ROUTES.medicalHistory} className="group">
+            <div className="flex flex-col justify-between rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-rose-50/30 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
+              <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-brand-100">
+                <Icon
+                  name="faClipboardList"
+                  className="text-sm text-brand-500"
+                />
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                  Total Visits
+                </p>
+                <div className="mt-1 text-[28px] font-black leading-none text-slate-900">
+                  {isLoading ? (
+                    <span className="inline-block h-7 w-10 animate-pulse rounded-lg bg-brand-100" />
+                  ) : (
+                    stats.totalVisits
+                  )}
+                </div>
+                <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-brand-500 group-hover:underline">
+                  View Records →
+                </p>
+              </div>
+            </div>
+          </Link>
+
+          {/* Active Medications */}
+          <div className="flex flex-col justify-between rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50/30 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-emerald-100">
+              <Icon name="faPills" className="text-sm text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                Active Medications
+              </p>
+              <div className="mt-1 text-[28px] font-black leading-none text-slate-900">
+                03
+              </div>
+              <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-emerald-500">
+                Active Plan
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ── 6. UPCOMING APPOINTMENTS LIST ─────────────────────────────────── */}
+      <motion.section {...fadeUp(0.22)}>
+        <div className="mb-3 flex items-center justify-between px-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Upcoming Visits
+            </h2>
+            {!isLoading && stats.upcoming.length > 0 && (
+              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[9px] font-black text-brand-600">
+                {stats.upcoming.length}
+              </span>
             )}
           </div>
-        </Card>
+          {stats.upcoming.length > 0 && (
+            <Link
+              to={ROUTES.myAppointments}
+              className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:underline"
+            >
+              All →
+            </Link>
+          )}
+        </div>
 
-        {/* Notifications */}
-        <Card title="Notifications" description="Updates regarding your care.">
-          <div className="mt-8 space-y-4">
-             {[
-               { icon: "faFlask", title: "Lab Results", detail: "Blood test reports are ready.", time: "2h ago" },
-               { icon: "faPrescription", title: "Prescription", detail: "Dr. Sarah added new meds.", time: "Yesterday" }
-             ].map((n, i) => (
-               <div key={i} className="flex gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                  <div className="h-10 w-10 shrink-0 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center">
-                    <Icon name={n.icon} />
+        <div className="space-y-2.5">
+          {isLoading ? (
+            [1, 2].map((i) => (
+              <div key={i} className="h-[76px] rounded-2xl">
+                <Skeleton className="h-full rounded-2xl" />
+              </div>
+            ))
+          ) : stats.upcoming.length > 0 ? (
+            stats.upcoming.map((appt, i) => {
+              const d = formatApptDate(appt.date);
+              const s = STATUS_MAP[appt.status] || STATUS_MAP.pending;
+              return (
+                <motion.div
+                  key={appt.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    delay: i * 0.06,
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  className="group flex items-center gap-3.5 rounded-2xl border border-slate-100 bg-white p-3.5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-100 hover:shadow-md"
+                >
+                  {/* Date block */}
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border border-slate-100 bg-slate-50 leading-none">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      {d.month}
+                    </span>
+                    <span className="text-[18px] font-black text-slate-900">
+                      {d.day}
+                    </span>
                   </div>
-                  <div>
-                    <div className="flex justify-between items-center w-full">
-                       <h4 className="text-sm font-bold text-slate-900">{n.title}</h4>
-                       <span className="text-[9px] font-bold text-slate-400 uppercase">{n.time}</span>
-                    </div>
-                    <p className="text-xs text-slate-500 font-medium">{n.detail}</p>
+
+                  {/* Info */}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-bold text-slate-900">
+                      {appt.serviceName}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                      <Icon name="faUserMd" className="text-[9px]" />
+                      Dr. {appt.doctorName}
+                      <span className="text-slate-300">·</span>
+                      {appt.time}
+                    </p>
                   </div>
-               </div>
-             ))}
+
+                  {/* Status + arrow */}
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span
+                      className={`rounded-lg border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${s.badge}`}
+                    >
+                      {s.label}
+                    </span>
+                    <Icon
+                      name="faChevronRight"
+                      className="text-[9px] text-slate-300 transition-transform group-hover:translate-x-0.5"
+                    />
+                  </div>
+                </motion.div>
+              );
+            })
+          ) : (
+            /* Empty appointments list */
+            <div className="flex flex-col items-center py-10 text-center">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
+                <Icon name="faCalendar" className="text-xl text-slate-200" />
+              </div>
+              <p className="text-[13px] font-semibold text-slate-400">
+                No other upcoming appointments.
+              </p>
+            </div>
+          )}
+        </div>
+      </motion.section>
+
+      {/* ── 7. SUPPORT HUB ────────────────────────────────────────────────── */}
+      <motion.section {...fadeUp(0.26)}>
+        <div
+          className="relative overflow-hidden rounded-[24px] p-5"
+          style={{
+            background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
+          }}
+        >
+          {/* Glow */}
+          <div
+            className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full blur-3xl"
+            style={{ background: "rgba(126,99,99,0.3)" }}
+          />
+
+          <div className="relative flex items-center gap-3.5">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <Icon name="faHeadset" className="text-base text-brand-300" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-black text-white">
+                Need Assistance?
+              </p>
+              <p className="text-[11px] text-white/40">
+                Our team is always here for you
+              </p>
+            </div>
+            <button
+              className="ml-auto shrink-0 rounded-xl px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, #7e6363, #9e7777)",
+              }}
+            >
+              Call Now
+            </button>
           </div>
-        </Card>
-      </div>
+
+          {/* Chat entry point */}
+          <div
+            className="relative mt-4 border-t pt-4"
+            style={{ borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <button className="flex w-full items-center justify-between">
+              <span className="flex items-center gap-2 text-[11px] text-white/40">
+                <Icon name="faCommentDots" className="text-brand-400" />
+                Start a support chat
+              </span>
+              <Icon
+                name="faChevronRight"
+                className="text-[9px] text-white/20"
+              />
+            </button>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ── FLOATING ACTION BUTTON ─────────────────────────────────────────── */}
+      <Link
+        to={ROUTES.bookAppointment}
+        className="fixed bottom-8 right-6 z-50 lg:right-10"
+      >
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{
+            delay: 0.5,
+            type: "spring",
+            stiffness: 300,
+            damping: 20,
+          }}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex h-14 w-14 items-center justify-center rounded-full text-white"
+          style={{
+            background: "linear-gradient(135deg, #7e6363, #9e7777)",
+            boxShadow: "0 8px 32px rgba(126,99,99,0.45)",
+          }}
+          title="Book an appointment"
+        >
+          <Icon name="faPlus" className="text-lg" />
+        </motion.button>
+      </Link>
     </div>
   );
 }

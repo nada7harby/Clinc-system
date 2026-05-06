@@ -169,3 +169,31 @@
 .recharts-default-tooltip {
   @apply !rounded-2xl !border-none !shadow-2xl !bg-white/90 !backdrop-blur-md !p-4 !text-sm;
 }
+
+/* ── Patient Dashboard Utilities ─────────────────────────────────────────── */
+.bg-white\/8 {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  @apply animate-pulse rounded-2xl bg-slate-100;
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.6s ease-in-out infinite;
+}

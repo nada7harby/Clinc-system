@@ -1,45 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/api/mockApi";
 
-export function useStats() {
+export function useStats(filters = {}, options = {}) {
   return useQuery({
-    queryKey: ["analytics", "stats"],
-    queryFn: analyticsApi.getStats,
+    queryKey: ["analytics", "stats", filters],
+    queryFn: () => analyticsApi.getStats(filters),
     staleTime: 60000,
+    ...options,
   });
 }
 
-export function useRevenueChart(period = "monthly") {
+export function useRevenueChart(
+  period = "monthly",
+  filters = {},
+  options = {},
+) {
   return useQuery({
-    queryKey: ["analytics", "revenue", period],
-    queryFn: () => analyticsApi.getRevenueChart(period),
+    queryKey: ["analytics", "revenue", period, filters],
+    queryFn: () => analyticsApi.getRevenueChart(period, filters),
+    ...options,
   });
 }
 
-export function useStatusChart() {
+export function useStatusChart(filters = {}, options = {}) {
   return useQuery({
-    queryKey: ["analytics", "status"],
-    queryFn: analyticsApi.getStatusChart,
+    queryKey: ["analytics", "status", filters],
+    queryFn: () => analyticsApi.getStatusChart(filters),
+    ...options,
   });
 }
 
-export function useBookingsChart() {
+export function useBookingsChart(filters = {}, options = {}) {
   return useQuery({
-    queryKey: ["analytics", "bookings"],
-    queryFn: analyticsApi.getBookingsChart,
+    queryKey: ["analytics", "bookings", filters],
+    queryFn: () => analyticsApi.getBookingsChart(filters),
+    ...options,
   });
 }
 
-export function useTopDoctors() {
+export function useTopDoctors(filters = {}, options = {}) {
   return useQuery({
-    queryKey: ["analytics", "top-doctors"],
-    queryFn: analyticsApi.getTopDoctors,
+    queryKey: ["analytics", "top-doctors", filters],
+    queryFn: () => analyticsApi.getTopDoctors(filters),
+    ...options,
   });
 }
 
-export function useLogs() {
+export function useLogs(filters = {}, options = {}) {
   return useQuery({
-    queryKey: ["analytics", "logs"],
-    queryFn: analyticsApi.getLogs,
+    queryKey: ["analytics", "logs", filters],
+    queryFn: () => analyticsApi.getLogs(filters),
+    ...options,
   });
 }

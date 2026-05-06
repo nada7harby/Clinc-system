@@ -4,6 +4,7 @@ import { Card, Badge, Button, Icon } from "@/components";
 import StatCard from "@/features/dashboard/StatCard";
 import { motion } from "framer-motion";
 import { classNames } from "@/utils";
+import toast from "react-hot-toast";
 
 function DoctorDashboard() {
   const { user } = useAuthStore();
@@ -30,6 +31,26 @@ function DoctorDashboard() {
     },
   ];
 
+  const handleTimelineMode = () => {
+    toast("Timeline mode is loading...");
+  };
+
+  const handleFullCalendar = () => {
+    toast("Opening full calendar...");
+  };
+
+  const handleSaveDraft = () => {
+    toast.success("Clinical notes draft saved.");
+  };
+
+  const handleOpenFile = (patientName) => {
+    toast(`Opening ${patientName}'s file...`);
+  };
+
+  const handleQuickAction = (label) => {
+    toast(`Starting ${label}...`);
+  };
+
   return (
     <div className="space-y-10 pb-12">
       <header className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
@@ -46,11 +67,21 @@ function DoctorDashboard() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" size="md" className="gap-2">
+          <Button
+            variant="outline"
+            size="md"
+            className="gap-2"
+            onClick={handleTimelineMode}
+          >
             <Icon name="faClock" />
             Timeline Mode
           </Button>
-          <Button variant="secondary" size="md" className="gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            className="gap-2"
+            onClick={handleFullCalendar}
+          >
             <Icon name="faCalendar" />
             Full Calendar
           </Button>
@@ -135,6 +166,7 @@ function DoctorDashboard() {
                           variant="ghost"
                           size="sm"
                           className="h-10 w-10 p-0 rounded-xl bg-white border border-slate-100 shadow-sm hover:text-brand-600"
+                          onClick={() => handleOpenFile(appt.patientName)}
                         >
                           <Icon name="faChevronRight" />
                         </Button>
@@ -166,6 +198,7 @@ function DoctorDashboard() {
               <Button
                 variant="accent"
                 className="w-full h-12 rounded-xl text-sm"
+                onClick={() => toast("Searching patient files...")}
               >
                 <Icon name="faSearch" className="mr-2" />
                 Find Patient File
@@ -173,6 +206,7 @@ function DoctorDashboard() {
               <Button
                 variant="ghost"
                 className="w-full text-white hover:bg-white/10 h-12 rounded-xl text-sm"
+                onClick={() => toast("Connecting to duty manager...")}
               >
                 <Icon name="faPhoneAlt" className="mr-2" />
                 Duty Manager
@@ -188,7 +222,11 @@ function DoctorDashboard() {
               placeholder="Start typing your observations..."
               className="mt-4 w-full h-40 rounded-2xl border border-slate-100/80 bg-white/70 p-4 text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all"
             />
-            <Button variant="primary" className="mt-4 w-full h-12 rounded-xl">
+            <Button
+              variant="primary"
+              className="mt-4 w-full h-12 rounded-xl"
+              onClick={handleSaveDraft}
+            >
               Save Draft
             </Button>
           </Card>
@@ -230,7 +268,12 @@ function DoctorDashboard() {
                   <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
                     {patient.time}
                   </span>
-                  <Button variant="outline" size="sm" className="h-9">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9"
+                    onClick={() => handleOpenFile(patient.name)}
+                  >
                     Open File
                   </Button>
                 </div>
@@ -250,6 +293,7 @@ function DoctorDashboard() {
                 key={i}
                 variant="outline"
                 className="w-full justify-between"
+                onClick={() => handleQuickAction(action.label)}
               >
                 <span className="inline-flex items-center gap-2">
                   <Icon name={action.icon} />

@@ -7,6 +7,7 @@ function Table({
   data,
   isLoading,
   emptyMessage = "No records found.",
+  rowClassName,
 }) {
   if (isLoading) {
     return (
@@ -22,7 +23,9 @@ function Table({
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 mb-4">
           <Icon name="faFolderOpen" className="text-2xl text-slate-200" />
         </div>
-        <p className="font-bold tracking-widest uppercase text-[10px]">{emptyMessage}</p>
+        <p className="font-bold tracking-widest uppercase text-[10px]">
+          {emptyMessage}
+        </p>
       </div>
     );
   }
@@ -45,11 +48,16 @@ function Table({
         <tbody className="before:block before:h-2">
           {data.map((row, rowIdx) => (
             <motion.tr
-              key={rowIdx}
+              key={row.id ?? rowIdx}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: rowIdx * 0.03 }}
-              className="group bg-white hover:bg-slate-50/50 transition-all duration-300 shadow-sm hover:shadow-md"
+              className={classNames(
+                "group bg-white hover:bg-slate-50/50 transition-all duration-300 shadow-sm hover:shadow-md",
+                typeof rowClassName === "function"
+                  ? rowClassName(row, rowIdx)
+                  : rowClassName,
+              )}
             >
               {columns.map((col, colIdx) => (
                 <td

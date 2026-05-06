@@ -292,6 +292,293 @@ function AppointmentsPage() {
     reset();
   };
 
+  // ── Patient card view ────────────────────────────────────────────────────
+  const PATIENT_STATUS_TABS = [
+    { key: "all", label: "All" },
+    { key: "confirmed", label: "Confirmed" },
+    { key: "pending", label: "Pending" },
+    { key: "completed", label: "Completed" },
+    { key: "cancelled", label: "Cancelled" },
+  ];
+
+  const PATIENT_BADGE = {
+    confirmed: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    pending: "bg-amber-50 text-amber-700 border-amber-100",
+    completed: "bg-slate-50 text-slate-600 border-slate-200",
+    cancelled: "bg-rose-50 text-rose-600 border-rose-100",
+  };
+
+  const PATIENT_DOT = {
+    confirmed: "bg-emerald-400",
+    pending: "bg-amber-400",
+    completed: "bg-slate-300",
+    cancelled: "bg-rose-300",
+  };
+
+  const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  function fmtDay(dateStr) {
+    if (!dateStr) return { day: "--", month: "---" };
+    const d = new Date(`${dateStr}T00:00:00`);
+    return {
+      day: String(d.getDate()).padStart(2, "0"),
+      month: MONTHS_SHORT[d.getMonth()],
+    };
+  }
+
+  if (user.role === ROLES.PATIENT) {
+    const allAppts = appointmentsData?.data || [];
+
+    return (
+      <div className=" space-y-5 pb-24">
+        {/* ── Patient Header ── */}
+        <header className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+              My Schedule
+            </p>
+            <h1 className="mt-0.5 text-2xl font-black tracking-tight text-slate-900">
+              My Appointments
+            </h1>
+          </div>
+          <Link to={ROUTES.bookAppointment}>
+            <Button
+              className="h-11 gap-2 rounded-2xl px-5 shadow-md shadow-brand-500/20"
+            >
+              <Icon name="faPlus" />
+              Book Now
+            </Button>
+          </Link>
+        </header>
+
+        {/* ── Summary chips ── */}
+        <div className="flex gap-3">
+          <div className="flex-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+              Total
+            </p>
+            <p className="mt-0.5 text-xl font-black text-slate-900">
+              {isLoading ? "—" : allAppts.length}
+            </p>
+          </div>
+          <div className="flex-1 rounded-2xl border border-amber-100 bg-amber-50/60 p-3 text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-amber-500">
+              Pending
+            </p>
+            <p className="mt-0.5 text-xl font-black text-slate-900">
+              {isLoading ? "—" : allAppts.filter((a) => a.status === "pending").length}
+            </p>
+          </div>
+          <div className="flex-1 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3 text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500">
+              Confirmed
+            </p>
+            <p className="mt-0.5 text-xl font-black text-slate-900">
+              {isLoading ? "—" : allAppts.filter((a) => a.status === "confirmed").length}
+            </p>
+          </div>
+        </div>
+
+        {/* ── Filter Tabs ── */}
+        <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+          {PATIENT_STATUS_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={classNames(
+                "shrink-0 rounded-xl px-4 py-2 text-[11px] font-black uppercase tracking-wider transition-all",
+                statusFilter === tab.key
+                  ? "bg-slate-900 text-white shadow-md"
+                  : "border border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Appointments Cards ── */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={statusFilter}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-3"
+          >
+            {isLoading ? (
+              [1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-[88px] animate-pulse rounded-2xl bg-slate-100"
+                />
+              ))
+            ) : allAppts.length === 0 ? (
+              /* Empty state */
+              <div className="flex flex-col items-center rounded-[28px] border-2 border-dashed border-brand-100 bg-gradient-to-br from-brand-50/50 to-surface-100 py-16 text-center">
+                <div
+                  className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                  style={{ background: "linear-gradient(135deg,#f9f6f6,#eef5f2)" }}
+                >
+                  <Icon
+                    name="faCalendarPlus"
+                    className="text-2xl text-brand-400"
+                  />
+                </div>
+                <h3 className="text-[17px] font-black text-slate-800">
+                  No appointments found
+                </h3>
+                <p className="mt-1.5 max-w-[220px] text-[13px] leading-relaxed text-slate-400">
+                  {statusFilter === "all"
+                    ? "You haven't booked any appointments yet."
+                    : `No ${statusFilter} appointments to show.`}
+                </p>
+                {statusFilter === "all" && (
+                  <Link to={ROUTES.bookAppointment} className="mt-6">
+                    <button
+                      className="rounded-2xl px-7 py-3.5 text-[13px] font-black text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
+                      style={{
+                        background: "linear-gradient(135deg,#7e6363,#9e7777)",
+                        boxShadow: "0 6px 24px rgba(126,99,99,0.35)",
+                      }}
+                    >
+                      Book Your First Appointment
+                    </button>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              allAppts.map((appt, i) => {
+                const d = fmtDay(appt.date);
+                const badgeCls = PATIENT_BADGE[appt.status] || PATIENT_BADGE.pending;
+                const dotCls = PATIENT_DOT[appt.status] || PATIENT_DOT.pending;
+                const statusLabel = appt.status
+                  ? appt.status.charAt(0).toUpperCase() + appt.status.slice(1)
+                  : "Pending";
+
+                return (
+                  <motion.div
+                    key={appt.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      delay: i * 0.05,
+                      duration: 0.35,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="group relative flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-100 hover:shadow-md"
+                  >
+                    {/* Date block */}
+                    <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-slate-100 bg-slate-50 leading-none">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                        {d.month}
+                      </span>
+                      <span className="text-[20px] font-black text-slate-900">
+                        {d.day}
+                      </span>
+                    </div>
+
+                    {/* Info */}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-bold text-slate-900">
+                        {appt.serviceName || "Consultation"}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                        <Icon name="faUserMd" className="text-[9px]" />
+                        Dr. {appt.doctorName}
+                        <span className="text-slate-200">·</span>
+                        <Icon name="faClock" className="text-[9px]" />
+                        {appt.time}
+                      </p>
+                    </div>
+
+                    {/* Status + actions */}
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`h-1.5 w-1.5 rounded-full ${dotCls}`} />
+                        <span
+                          className={`rounded-lg border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${badgeCls}`}
+                        >
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {appt.status !== "completed" &&
+                          appt.status !== "cancelled" && (
+                            <button
+                              onClick={() => handleEditOpen(appt)}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-slate-400 transition-all hover:border-brand-200 hover:bg-brand-50 hover:text-brand-600"
+                              title="Edit"
+                            >
+                              <Icon name="faPen" className="text-[9px]" />
+                            </button>
+                          )}
+                        {appt.status !== "cancelled" &&
+                          appt.status !== "completed" && (
+                            <button
+                              onClick={() => {
+                                if (confirm("Cancel this appointment?"))
+                                  cancelAppt(appt.id);
+                              }}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-slate-400 transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500"
+                              title="Cancel"
+                            >
+                              <Icon name="faTimes" className="text-[9px]" />
+                            </button>
+                          )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Edit modal for patients */}
+        <Modal
+          isOpen={!!editingAppointment}
+          onClose={() => setEditingAppointment(null)}
+          title="Modify Appointment"
+          size="md"
+        >
+          {editingAppointment && (
+            <form onSubmit={handleSubmit(onEditSubmit)} className="space-y-6 pt-4">
+              <div className="grid grid-cols-2 gap-6">
+                <Input
+                  label="Revised Date"
+                  type="date"
+                  {...register("date", { required: "Date is required" })}
+                />
+                <Input
+                  label="Revised Time"
+                  type="time"
+                  {...register("time", { required: "Time is required" })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="ml-1 text-sm font-bold text-slate-700">
+                  Notes
+                </label>
+                <textarea
+                  className="h-28 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium outline-none transition-all focus:border-brand-500"
+                  {...register("notes")}
+                />
+              </div>
+              <div className="flex justify-end gap-3 border-t border-slate-50 pt-6">
+                <Button variant="ghost" onClick={() => setEditingAppointment(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Save Changes</Button>
+              </div>
+            </form>
+          )}
+        </Modal>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-12">
       {/* Premium Header with Mini Analytics */}
@@ -319,22 +606,13 @@ function AppointmentsPage() {
               <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Confirmed</p>
               <p className="text-xl font-black text-slate-900">{stats.confirmed}</p>
            </div>
-            {user.role === ROLES.PATIENT ? (
-               <Link to={ROUTES.bookAppointment}>
-                 <Button className="h-14 px-8 rounded-2xl shadow-xl shadow-brand-500/30 gap-3 ml-4">
-                    <Icon name="faPlus" />
-                    Book Now
-                 </Button>
-               </Link>
-            ) : (
-               <Button 
-                  onClick={() => setIsBookingOpen(true)}
-                  className="h-14 px-8 rounded-2xl shadow-xl shadow-brand-500/30 gap-3 ml-4"
-               >
-                  <Icon name="faPlus" />
-                  New Booking
-               </Button>
-            )}
+            <Button 
+               onClick={() => setIsBookingOpen(true)}
+               className="h-14 px-8 rounded-2xl shadow-xl shadow-brand-500/30 gap-3 ml-4"
+            >
+               <Icon name="faPlus" />
+               New Booking
+            </Button>
         </div>
       </header>
 
