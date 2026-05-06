@@ -13,9 +13,9 @@ function DashboardLayout() {
 
       <div
         className={classNames(
-          "flex flex-1 flex-col transition-all duration-300",
-          sidebarCollapsed ? "lg:ml-20" : "lg:ml-72",
+          "dashboard-content flex flex-1 flex-col transition-all duration-300",
         )}
+        data-collapsed={sidebarCollapsed ? "true" : "false"}
       >
         <Navbar />
 

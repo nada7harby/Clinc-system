@@ -4,8 +4,10 @@ import { useRegister } from "@/hooks/useAuth";
 import { Input, Button, Card } from "@/components";
 import { ROUTES, ROLES } from "@/constants/appConstants";
 import { Icon } from "@/components/Icon";
+import { useTranslation } from "react-i18next";
 
 function RegisterPage() {
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -27,25 +29,23 @@ function RegisterPage() {
             <Icon name="faHeartPulse" className="h-8 w-8 text-primary" />
           </div>
           <h2 className="mt-4 text-2xl font-bold text-slate-900">
-            Create Account
+            {t("auth.createAccount")}
           </h2>
-          <p className="mt-2 text-slate-500">
-            Join MediCore to manage your appointments
-          </p>
+          <p className="mt-2 text-slate-500">{t("auth.joinPlatform")}</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <Input
-            label="Full Name"
-            placeholder="John Doe"
+            label={t("auth.fullName")}
+            placeholder={t("auth.fullNamePlaceholder")}
             error={errors.name?.message}
             {...register("name", { required: "Name is required" })}
           />
 
           <Input
-            label="Email Address"
+            label={t("auth.emailAddress")}
             type="email"
-            placeholder="john@example.com"
+            placeholder={t("auth.emailPlaceholderGeneric")}
             error={errors.email?.message}
             {...register("email", {
               required: "Email is required",
@@ -54,9 +54,9 @@ function RegisterPage() {
           />
 
           <Input
-            label="Password"
+            label={t("auth.password")}
             type="password"
-            placeholder="••••••••"
+            placeholder={t("auth.passwordPlaceholder")}
             error={errors.password?.message}
             {...register("password", {
               required: "Password is required",
@@ -73,17 +73,17 @@ function RegisterPage() {
             isLoading={isLoading}
             disabled={isLoading}
           >
-            {isLoading ? "Creating account..." : "Register"}
+            {isLoading ? t("auth.creatingAccount") : t("auth.register")}
           </Button>
         </form>
 
         <div className="mt-6 text-center text-sm text-slate-500">
-          Already have an account?{" "}
+          {t("auth.alreadyHaveAccount")}{" "}
           <Link
             to={ROUTES.login}
             className="font-semibold text-primary hover:underline"
           >
-            Sign In
+            {t("auth.signIn")}
           </Link>
         </div>
       </Card>

@@ -4,12 +4,15 @@ import { useUIStore } from "@/store/uiStore";
 import { Icon } from "@/components/Icon";
 import { motion, AnimatePresence } from "framer-motion";
 import { classNames } from "@/utils";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 function Navbar() {
   const { user } = useAuthStore();
   const { toggleSidebar } = useUIStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -27,22 +30,22 @@ function Navbar() {
   const notifications = [
     {
       id: 1,
-      title: "Appointment Confirmed",
-      message: "Dr. Sarah confirmed your slot.",
+      title: t("notifications.appointmentConfirmed"),
+      message: t("notifications.appointmentConfirmedMessage"),
       time: "2m ago",
       read: false,
     },
     {
       id: 2,
-      title: "New Lab Result",
-      message: "Your blood work report is ready.",
+      title: t("notifications.newLabResult"),
+      message: t("notifications.newLabResultMessage"),
       time: "1h ago",
       read: false,
     },
     {
       id: 3,
-      title: "System Update",
-      message: "New features added to dashboard.",
+      title: t("notifications.systemUpdate"),
+      message: t("notifications.systemUpdateMessage"),
       time: "5h ago",
       read: true,
     },
@@ -62,7 +65,7 @@ function Navbar() {
           <Icon name="faSearch" className="text-slate-400 text-xs" />
           <input
             type="text"
-            placeholder="Search patients, results..."
+            placeholder={t("navbar.searchPlaceholder")}
             className="w-64 bg-transparent text-sm font-bold outline-none placeholder:text-slate-400 text-slate-900"
           />
           <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-slate-200 bg-white px-1.5 font-mono text-[10px] font-medium text-slate-400">
@@ -99,10 +102,10 @@ function Navbar() {
                 >
                   <div className="flex items-center justify-between mb-4 px-2">
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
-                      Notifications
+                      {t("common.notifications")}
                     </h3>
                     <button className="text-[10px] font-bold text-brand-600 hover:underline">
-                      Mark all read
+                      {t("common.markAllRead")}
                     </button>
                   </div>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto">
@@ -131,17 +134,22 @@ function Navbar() {
                     ))}
                   </div>
                   <button className="mt-4 w-full py-3 rounded-xl bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
-                    View All Notifications
+                    {t("common.viewAllNotifications")}
                   </button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          <button className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition-all">
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition-all"
+            aria-label={t("navbar.help")}
+          >
             <Icon name="faQuestionCircle" />
           </button>
         </div>
+
+        <LanguageSwitcher />
 
         <div className="h-8 w-px bg-slate-200/60 mx-1"></div>
 

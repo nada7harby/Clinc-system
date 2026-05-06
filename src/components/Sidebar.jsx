@@ -7,18 +7,21 @@ import { Icon } from "@/components/Icon";
 import { useLogout } from "@/hooks/useAuth";
 import { Button } from "@/components";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 function Sidebar() {
   const { user } = useAuthStore();
   const { sidebarCollapsed, toggleCollapse } = useUIStore();
   const logout = useLogout();
+  const { t } = useTranslation();
 
   const navItems = getNavItems(user?.role);
 
   return (
     <aside
       className={classNames(
-        "fixed inset-y-0 left-0 z-40 flex flex-col bg-ink-950/95 text-slate-400 transition-all duration-500 ease-in-out border-r border-white/5",
+        "sidebar-shell fixed inset-y-0 z-40 flex flex-col bg-ink-950/95 text-slate-400 transition-all duration-500 ease-in-out",
         sidebarCollapsed ? "w-20" : "w-72",
       )}
     >
@@ -35,7 +38,8 @@ function Sidebar() {
               exit={{ opacity: 0, x: -10 }}
               className="ml-3 text-xl font-bold text-white tracking-tight"
             >
-              MediCore<span className="text-brand-400">.</span>
+              {t("app.brand")}
+              <span className="text-brand-400">.</span>
             </motion.span>
           )}
         </AnimatePresence>
@@ -45,7 +49,7 @@ function Sidebar() {
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-8">
         {!sidebarCollapsed && (
           <p className="mb-4 px-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            Main Menu
+            {t("nav.mainMenu")}
           </p>
         )}
         {navItems.map((item) => (
@@ -75,7 +79,9 @@ function Sidebar() {
                 />
                 {!sidebarCollapsed && (
                   <span className="font-medium tracking-tight">
-                    {item.label}
+                    {t(item.labelKey || item.label, {
+                      defaultValue: item.label,
+                    })}
                   </span>
                 )}
                 {isActive && (
@@ -103,8 +109,14 @@ function Sidebar() {
               !sidebarCollapsed && "mr-4",
             )}
           />
-          {!sidebarCollapsed && <span className="font-medium">Sign Out</span>}
+          {!sidebarCollapsed && (
+            <span className="font-medium">{t("nav.signOut")}</span>
+          )}
         </button>
+
+        {!sidebarCollapsed && (
+          <LanguageSwitcher className="w-full justify-center" />
+        )}
 
         <button
           onClick={toggleCollapse}

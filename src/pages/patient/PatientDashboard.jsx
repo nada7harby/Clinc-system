@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Icon } from "@/components";
 import { ROUTES, APPOINTMENT_STATUS } from "@/constants/appConstants";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 // ── Animation helpers ────────────────────────────────────────────────────────
 const fadeUp = (delay = 0) => ({
@@ -21,23 +22,23 @@ const scaleIn = (delay = 0) => ({
 });
 
 // ── Greeting helper ───────────────────────────────────────────────────────────
-function getGreeting() {
+function getGreeting(t) {
   const h = new Date().getHours();
-  if (h < 12) return { text: "Good Morning", emoji: "☀️" };
-  if (h < 17) return { text: "Good Afternoon", emoji: "🌤️" };
-  return { text: "Good Evening", emoji: "🌙" };
+  if (h < 12) return { text: t("patient.greetings.morning"), emoji: "☀️" };
+  if (h < 17) return { text: t("patient.greetings.afternoon"), emoji: "🌤️" };
+  return { text: t("patient.greetings.evening"), emoji: "🌙" };
 }
 
 // ── Days-until helper ─────────────────────────────────────────────────────────
-function getDaysUntil(dateStr) {
+function getDaysUntil(t, dateStr) {
   if (!dateStr) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const target = new Date(`${dateStr}T00:00:00`);
   const diff = Math.round((target - today) / 86400000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Tomorrow";
-  if (diff > 0 && diff < 31) return `In ${diff} days`;
+  if (diff === 0) return t("patient.days.today");
+  if (diff === 1) return t("patient.days.tomorrow");
+  if (diff > 0 && diff < 31) return t("patient.days.inDays", { count: diff });
   return null;
 }
 
@@ -45,12 +46,12 @@ function getDaysUntil(dateStr) {
 const VITALS = [
   {
     key: "bp",
-    label: "Blood Pressure",
+    labelKey: "patient.vitals.bloodPressure",
     value: "120/80",
     unit: "mmHg",
     icon: "faHeartbeat",
-    trend: "Stable",
-    statusLabel: "Normal",
+    trendKey: "patient.vitals.stable",
+    statusKey: "patient.vitals.normal",
     gradFrom: "#fff5f5",
     gradTo: "#fff0f5",
     ring: "ring-rose-100",
@@ -61,12 +62,12 @@ const VITALS = [
   },
   {
     key: "hr",
-    label: "Heart Rate",
+    labelKey: "patient.vitals.heartRate",
     value: "72",
     unit: "bpm",
     icon: "faWind",
-    trend: "Healthy",
-    statusLabel: "Healthy",
+    trendKey: "patient.vitals.healthy",
+    statusKey: "patient.vitals.healthy",
     gradFrom: "#f0fdf4",
     gradTo: "#ecfdf5",
     ring: "ring-emerald-100",
@@ -81,25 +82,25 @@ const VITALS = [
 const QUICK_ACTIONS = [
   {
     icon: "faCalendarPlus",
-    label: "Book Now",
+    labelKey: "patient.quickActions.bookNow",
     to: ROUTES.bookAppointment,
     isPrimary: true,
   },
   {
     icon: "faClipboardList",
-    label: "History",
+    labelKey: "patient.quickActions.history",
     to: ROUTES.medicalHistory,
     isPrimary: false,
   },
   {
     icon: "faCalendarDays",
-    label: "My Visits",
+    labelKey: "patient.quickActions.myVisits",
     to: ROUTES.myAppointments,
     isPrimary: false,
   },
   {
     icon: "faCircleUser",
-    label: "Profile",
+    labelKey: "patient.quickActions.profile",
     to: ROUTES.profile,
     isPrimary: false,
   },
@@ -108,49 +109,34 @@ const QUICK_ACTIONS = [
 // ── Status styling map ────────────────────────────────────────────────────────
 const STATUS_MAP = {
   confirmed: {
-    label: "Confirmed",
+    labelKey: "patient.status.confirmed",
     dot: "bg-emerald-400",
     badge: "bg-emerald-50 text-emerald-700 border-emerald-100",
   },
   pending: {
-    label: "Pending",
+    labelKey: "patient.status.pending",
     dot: "bg-amber-400",
     badge: "bg-amber-50 text-amber-700 border-amber-100",
   },
   completed: {
-    label: "Completed",
+    labelKey: "patient.status.completed",
     dot: "bg-slate-300",
     badge: "bg-slate-50 text-slate-600 border-slate-200",
   },
   cancelled: {
-    label: "Cancelled",
+    labelKey: "patient.status.cancelled",
     dot: "bg-rose-300",
     badge: "bg-rose-50 text-rose-600 border-rose-100",
   },
 };
 
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function formatApptDate(dateStr) {
+function formatApptDate(dateStr, locale) {
   if (!dateStr) return { day: "--", month: "---", full: "Date TBD" };
   const d = new Date(`${dateStr}T00:00:00`);
   return {
-    day: String(d.getDate()).padStart(2, "0"),
-    month: MONTHS[d.getMonth()],
-    full: d.toLocaleDateString("en-US", {
+    day: d.toLocaleString(locale, { day: "2-digit" }),
+    month: d.toLocaleString(locale, { month: "short" }),
+    full: d.toLocaleDateString(locale, {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -172,12 +158,14 @@ function Skeleton({ className = "" }) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 function PatientDashboard() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const { data: appointmentsData, isLoading } = useAppointments({
     patientId: user.id,
   });
-  const greeting = getGreeting();
-  const firstName = user?.name?.split(" ")[0] || "there";
+  const greeting = getGreeting(t);
+  const firstName = user?.name?.split(" ")[0] || t("common.there", { defaultValue: "there" });
+  const locale = i18n.language === "ar" ? "ar-EG" : "en-US";
 
   const stats = useMemo(() => {
     if (!appointmentsData?.data)
@@ -206,11 +194,11 @@ function PatientDashboard() {
     };
   }, [appointmentsData]);
 
-  const nextDate = formatApptDate(stats.next?.date);
-  const daysUntil = getDaysUntil(stats.next?.date);
+  const nextDate = formatApptDate(stats.next?.date, locale);
+  const daysUntil = getDaysUntil(t, stats.next?.date);
 
-  const handleQuickAction = (label) => {
-    toast(`Opening ${label}...`);
+  const handleQuickAction = (labelKey) => {
+    toast(t("common.opening", { defaultValue: "Opening {{label}}...", label: t(labelKey) }));
   };
 
   return (
@@ -262,7 +250,7 @@ function PatientDashboard() {
               <div className="mt-1.5 flex items-center gap-1.5">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 <p className="text-[10px] font-semibold text-slate-400">
-                  Health status: All good
+                  {t("patient.header.healthStatus")}
                 </p>
               </div>
             </div>
@@ -287,8 +275,7 @@ function PatientDashboard() {
             />
           </div>
           <p className="text-[11px] font-medium text-slate-500">
-            <span className="font-black text-slate-700">MediCore</span> · Your
-            trusted health companion
+            <span className="font-black text-slate-700">{t("app.brand")}</span> · {t("patient.header.brandTagline")}
           </p>
         </div>
       </motion.header>
@@ -297,7 +284,7 @@ function PatientDashboard() {
       <motion.section {...fadeUp(0.05)}>
         <div className="grid grid-cols-4 gap-3">
           {QUICK_ACTIONS.map((action) => (
-            <Link key={action.label} to={action.to} className="group">
+            <Link key={action.labelKey} to={action.to} className="group">
               <div
                 className={`flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-all active:scale-95 ${
                   action.isPrimary
@@ -330,7 +317,7 @@ function PatientDashboard() {
                     action.isPrimary ? "text-white/90" : "text-slate-500"
                   }`}
                 >
-                  {action.label}
+                  {t(action.labelKey)}
                 </span>
               </div>
             </Link>
@@ -342,13 +329,13 @@ function PatientDashboard() {
       <motion.section {...scaleIn(0.1)}>
         <div className="mb-3 flex items-center justify-between px-0.5">
           <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Next Appointment
+            {t("patient.dashboard.nextAppointment")}
           </h2>
           <Link
             to={ROUTES.myAppointments}
             className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:underline"
           >
-            See All →
+            {t("patient.dashboard.seeAll")} →
           </Link>
         </div>
 
@@ -392,7 +379,7 @@ function PatientDashboard() {
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">
-                    Coming Up
+                    {t("patient.header.comingUp")}
                   </span>
                 </div>
                 {daysUntil && (
@@ -416,7 +403,7 @@ function PatientDashboard() {
                 <div className="mt-1.5 flex items-center gap-2">
                   <Icon name="faClock" className="text-[10px] text-brand-400" />
                   <p className="text-[15px] font-bold text-brand-300">
-                    at {stats.next.time}
+                    {t("patient.header.at")} {stats.next.time}
                   </p>
                 </div>
               </div>
@@ -443,7 +430,7 @@ function PatientDashboard() {
                       Dr. {stats.next.doctorName}
                     </p>
                     <p className="text-[11px] text-white/40">
-                      {stats.next.specialty || "General Practitioner"}
+                      {stats.next.specialty || t("patient.header.generalPractitioner", { defaultValue: "General Practitioner" })}
                     </p>
                   </div>
                   <span
@@ -453,7 +440,7 @@ function PatientDashboard() {
                       border: "1px solid rgba(126,99,99,0.35)",
                     }}
                   >
-                    {stats.next.serviceName || "Consultation"}
+                    {stats.next.serviceName || t("patient.header.consultation", { defaultValue: "Consultation" })}
                   </span>
                 </div>
               </div>
@@ -467,7 +454,7 @@ function PatientDashboard() {
                       background: "linear-gradient(135deg, #7e6363, #9e7777)",
                     }}
                   >
-                    Manage Booking
+                    {t("patient.header.manageBooking")}
                   </button>
                 </Link>
                 <button
@@ -476,7 +463,7 @@ function PatientDashboard() {
                     background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.08)",
                   }}
-                  title="Get Directions"
+                  title={t("patient.header.getDirections")}
                 >
                   <Icon name="faLocationDot" className="text-sm" />
                 </button>
@@ -503,11 +490,10 @@ function PatientDashboard() {
                 />
               </div>
               <h3 className="text-[17px] font-black text-slate-800">
-                No upcoming appointments
+                {t("patient.dashboard.noUpcomingTitle")}
               </h3>
               <p className="mt-1.5 max-w-[240px] text-[13px] leading-relaxed text-slate-400">
-                Take control of your health — book your first consultation in
-                seconds.
+                {t("patient.dashboard.noUpcomingSubtitle")}
               </p>
               <Link to={ROUTES.bookAppointment} className="mt-6">
                 <button
@@ -517,7 +503,7 @@ function PatientDashboard() {
                     boxShadow: "0 6px 24px rgba(126,99,99,0.35)",
                   }}
                 >
-                  Book Your First Appointment
+                  {t("patient.dashboard.bookFirst")}
                 </button>
               </Link>
             </motion.div>
@@ -528,7 +514,7 @@ function PatientDashboard() {
       {/* ── 4. HEALTH VITALS SNAPSHOT ─────────────────────────────────────── */}
       <motion.section {...fadeUp(0.15)}>
         <h2 className="mb-3 px-0.5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-          Health Snapshot
+          {t("patient.dashboard.healthSnapshot")}
         </h2>
         <div className="grid grid-cols-2 gap-3">
           {VITALS.map((v) => (
@@ -554,14 +540,14 @@ function PatientDashboard() {
                 <div className="flex items-center gap-1.5">
                   <div className={`h-1.5 w-1.5 rounded-full ${v.dotColor}`} />
                   <span className={`text-[9px] font-black ${v.statusColor}`}>
-                    {v.statusLabel}
+                    {t(v.statusKey)}
                   </span>
                 </div>
               </div>
 
               <div className="relative mt-3">
                 <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">
-                  {v.label}
+                  {t(v.labelKey)}
                 </p>
                 <div className="mt-1 flex items-baseline gap-1">
                   <span className="text-[22px] font-black leading-none text-slate-900">
@@ -572,7 +558,7 @@ function PatientDashboard() {
                   </span>
                 </div>
                 <p className="mt-1 text-[9px] font-semibold text-slate-400">
-                  {v.trend}
+                  {t(v.trendKey)}
                 </p>
               </div>
             </div>
@@ -583,7 +569,7 @@ function PatientDashboard() {
       {/* ── 5. QUICK HEALTH STATS ─────────────────────────────────────────── */}
       <motion.section {...fadeUp(0.19)}>
         <h2 className="mb-3 px-0.5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-          Health Overview
+          {t("patient.dashboard.healthOverview")}
         </h2>
         <div className="grid grid-cols-2 gap-3">
           {/* Total Visits */}
@@ -597,7 +583,7 @@ function PatientDashboard() {
               </div>
               <div>
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                  Total Visits
+                  {t("patient.dashboard.totalVisits")}
                 </p>
                 <div className="mt-1 text-[28px] font-black leading-none text-slate-900">
                   {isLoading ? (
@@ -607,7 +593,7 @@ function PatientDashboard() {
                   )}
                 </div>
                 <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-brand-500 group-hover:underline">
-                  View Records →
+                  {t("patient.dashboard.viewRecords")} →
                 </p>
               </div>
             </div>
@@ -620,13 +606,13 @@ function PatientDashboard() {
             </div>
             <div>
               <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                Active Medications
+                {t("patient.dashboard.activeMedications")}
               </p>
               <div className="mt-1 text-[28px] font-black leading-none text-slate-900">
                 03
               </div>
               <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-emerald-500">
-                Active Plan
+                {t("patient.dashboard.activePlan")}
               </p>
             </div>
           </div>
@@ -638,7 +624,7 @@ function PatientDashboard() {
         <div className="mb-3 flex items-center justify-between px-0.5">
           <div className="flex items-center gap-2">
             <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Upcoming Visits
+              {t("patient.dashboard.upcomingVisits")}
             </h2>
             {!isLoading && stats.upcoming.length > 0 && (
               <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[9px] font-black text-brand-600">
@@ -651,7 +637,7 @@ function PatientDashboard() {
               to={ROUTES.myAppointments}
               className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:underline"
             >
-              All →
+              {t("patient.dashboard.all")} →
             </Link>
           )}
         </div>
@@ -665,7 +651,7 @@ function PatientDashboard() {
             ))
           ) : stats.upcoming.length > 0 ? (
             stats.upcoming.map((appt, i) => {
-              const d = formatApptDate(appt.date);
+              const d = formatApptDate(appt.date, locale);
               const s = STATUS_MAP[appt.status] || STATUS_MAP.pending;
               return (
                 <motion.div
@@ -707,7 +693,7 @@ function PatientDashboard() {
                     <span
                       className={`rounded-lg border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${s.badge}`}
                     >
-                      {s.label}
+                      {t(s.labelKey)}
                     </span>
                     <Icon
                       name="faChevronRight"
@@ -724,7 +710,7 @@ function PatientDashboard() {
                 <Icon name="faCalendar" className="text-xl text-slate-200" />
               </div>
               <p className="text-[13px] font-semibold text-slate-400">
-                No other upcoming appointments.
+                {t("patient.dashboard.noOtherUpcoming")}
               </p>
             </div>
           )}
@@ -757,10 +743,10 @@ function PatientDashboard() {
             </div>
             <div className="min-w-0">
               <p className="text-[13px] font-black text-white">
-                Need Assistance?
+                {t("patient.dashboard.supportTitle")}
               </p>
               <p className="text-[11px] text-white/40">
-                Our team is always here for you
+                {t("patient.dashboard.supportSubtitle")}
               </p>
             </div>
             <button
@@ -769,7 +755,7 @@ function PatientDashboard() {
                 background: "linear-gradient(135deg, #7e6363, #9e7777)",
               }}
             >
-              Call Now
+              {t("patient.dashboard.callNow")}
             </button>
           </div>
 
@@ -781,7 +767,7 @@ function PatientDashboard() {
             <button className="flex w-full items-center justify-between">
               <span className="flex items-center gap-2 text-[11px] text-white/40">
                 <Icon name="faCommentDots" className="text-brand-400" />
-                Start a support chat
+                {t("patient.dashboard.startSupportChat")}
               </span>
               <Icon
                 name="faChevronRight"
@@ -813,7 +799,7 @@ function PatientDashboard() {
             background: "linear-gradient(135deg, #7e6363, #9e7777)",
             boxShadow: "0 8px 32px rgba(126,99,99,0.45)",
           }}
-          title="Book an appointment"
+          title={t("patient.dashboard.bookFab")}
         >
           <Icon name="faPlus" className="text-lg" />
         </motion.button>

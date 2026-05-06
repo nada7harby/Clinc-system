@@ -133,6 +133,32 @@
   }
 }
 
+[dir="ltr"] .sidebar-shell {
+  left: 0;
+  right: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[dir="rtl"] .sidebar-shell {
+  right: 0;
+  left: auto;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-content {
+  margin-inline-start: 0;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-content[data-collapsed="true"] {
+    margin-inline-start: 5rem;
+  }
+
+  .dashboard-content[data-collapsed="false"] {
+    margin-inline-start: 18rem;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -176,8 +202,14 @@
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-slide-up {
@@ -190,8 +222,12 @@
 }
 
 @keyframes shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
 }
 
 .animate-shimmer {

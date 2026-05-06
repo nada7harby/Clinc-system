@@ -2,40 +2,102 @@ import { ROLES, ROUTES } from "@/constants/appConstants";
 
 export const getNavItems = (role) => {
   const common = [
-    { label: "Dashboard", href: ROUTES.dashboard, icon: "faChartLine" },
+    {
+      label: "Dashboard",
+      labelKey: "nav.dashboard",
+      href: ROUTES.dashboard,
+      icon: "faChartLine",
+    },
   ];
 
   const admin = [
-    { label: "Staff Directory", href: ROUTES.users, icon: "faUserShield" },
-    { label: "Clinic Services", href: ROUTES.services, icon: "faStethoscope" },
+    {
+      label: "Staff Directory",
+      labelKey: "nav.staffDirectory",
+      href: ROUTES.users,
+      icon: "faUserShield",
+    },
+    {
+      label: "Clinic Services",
+      labelKey: "nav.clinicServices",
+      href: ROUTES.services,
+      icon: "faStethoscope",
+    },
     {
       label: "Appointments",
+      labelKey: "nav.appointments",
       href: ROUTES.appointments,
       icon: "faCalendarCheck",
     },
     {
       label: "Patients",
+      labelKey: "nav.patients",
       href: ROUTES.patients,
       icon: "faHospitalUser",
     },
   ];
 
   const doctor = [
-    { label: "My Schedule", href: ROUTES.appointments, icon: "faClock" },
-    { label: "My Patients", href: ROUTES.patients, icon: "faUserMd" },
+    {
+      label: "My Schedule",
+      labelKey: "nav.mySchedule",
+      href: ROUTES.appointments,
+      icon: "faClock",
+    },
+    {
+      label: "My Patients",
+      labelKey: "nav.myPatients",
+      href: ROUTES.patients,
+      icon: "faUserMd",
+    },
   ];
 
   const receptionist = [
-    { label: "Quick Booking", href: ROUTES.appointments, icon: "faPlusCircle" },
-    { label: "Patient Check-in", href: ROUTES.patients, icon: "faAddressCard" },
+    {
+      label: "Quick Booking",
+      labelKey: "nav.quickBooking",
+      href: ROUTES.appointments,
+      icon: "faPlusCircle",
+    },
+    {
+      label: "Patient Check-in",
+      labelKey: "nav.patientCheckIn",
+      href: ROUTES.patients,
+      icon: "faAddressCard",
+    },
   ];
 
   const patient = [
-    { label: "Dashboard", href: ROUTES.patientDashboard, icon: "faChartLine" },
-    { label: "Book Appointment", href: ROUTES.bookAppointment, icon: "faPlusCircle" },
-    { label: "My Appointments", href: ROUTES.myAppointments, icon: "faCalendarAlt" },
-    { label: "Medical History", href: ROUTES.medicalHistory, icon: "faHistory" },
-    { label: "Profile", href: ROUTES.profile, icon: "faUserCircle" },
+    {
+      label: "Dashboard",
+      labelKey: "nav.dashboard",
+      href: ROUTES.patientDashboard,
+      icon: "faChartLine",
+    },
+    {
+      label: "Book Appointment",
+      labelKey: "nav.bookAppointment",
+      href: ROUTES.bookAppointment,
+      icon: "faPlusCircle",
+    },
+    {
+      label: "My Appointments",
+      labelKey: "nav.myAppointments",
+      href: ROUTES.myAppointments,
+      icon: "faCalendarAlt",
+    },
+    {
+      label: "Medical History",
+      labelKey: "nav.medicalHistory",
+      href: ROUTES.medicalHistory,
+      icon: "faHistory",
+    },
+    {
+      label: "Profile",
+      labelKey: "nav.profile",
+      href: ROUTES.profile,
+      icon: "faUserCircle",
+    },
   ];
 
   const roleMap = {
