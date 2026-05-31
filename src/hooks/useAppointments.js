@@ -89,3 +89,17 @@ export function useUpdateAppointmentStatus() {
     onError: (err) => toast.error(err.message || "Failed to update status."),
   });
 }
+
+export function useUpdatePayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, paymentStatus, paymentMethod, paidAmount }) =>
+      appointmentsApi.update(id, { paymentStatus, paymentMethod, paidAmount }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [QUERY_KEY] });
+      toast.success("Payment recorded successfully!");
+    },
+    onError: (err) => toast.error(err.message || "Failed to update payment."),
+  });
+}
+

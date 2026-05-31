@@ -5,4 +5,6 @@ export { default as Input } from "./Input";
 export { default as Modal } from "./Modal";
 export { default as Table } from "./Table";
 export { default as Icon } from "./Icon";
+export { default as PaymentModal } from "./PaymentModal";
 export { ProtectedRoute, GuestRoute } from "./ProtectedRoute";
+

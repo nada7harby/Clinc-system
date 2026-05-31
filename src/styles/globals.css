@@ -233,3 +233,79 @@
 .animate-shimmer {
   animation: shimmer 1.6s ease-in-out infinite;
 }
+
+/* ── Global Printing Styles Override ────────────────────────────────────────── */
+@media print {
+  /* Hide sidebar, top navbar/header, buttons, and decorative backgrounds */
+  .sidebar-shell,
+  header,
+  nav,
+  aside,
+  button,
+  .hud-chip,
+  .no-print,
+  .app-shell::before,
+  .app-shell::after,
+  .flex.justify-center.gap-3, /* hides printable receipt action button row */
+  .absolute.right-0.top-0.h-40.w-40.bg-brand-500\/5.rounded-bl-full.pointer-events-none { /* hides top-right decorative corner */
+    display: none !important;
+  }
+
+  /* Reset layout structure and backgrounds to be white and full page */
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-shell,
+  .dashboard-content {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: auto !important;
+    position: static !important;
+  }
+
+  /* Target the printable invoice container card specifically */
+  #printable-invoice {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    position: static !important;
+  }
+
+  /* Ensure grid layouts are printed cleanly */
+  .grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Maintain readable contrasts on colored panels during print */
+  .bg-emerald-50\/50 {
+    background-color: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+  }
+
+  .bg-rose-50\/50 {
+    background-color: #fff1f2 !important;
+    border: 1px solid #fecdd3 !important;
+  }
+
+  .bg-slate-50\/50 {
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+}
+

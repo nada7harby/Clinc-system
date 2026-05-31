@@ -45,3 +45,25 @@ export const STATUS_COLORS = {
   completed: "success",
   cancelled: "danger",
 };
+
+export const PAYMENT_STATUS = {
+  UNPAID: "unpaid",
+  DEPOSIT: "deposit",
+  PAID: "paid",
+  INSURANCE: "insurance",
+};
+
+export const PAYMENT_METHOD = {
+  CARD: "card",
+  CASH: "cash",
+  WALLET: "wallet",
+  QR: "qr",
+  INSURANCE: "insurance",
+};
+
+export const PAYMENT_STATUS_COLORS = {
+  unpaid: "danger",
+  deposit: "warning",
+  paid: "success",
+  insurance: "primary",
+};

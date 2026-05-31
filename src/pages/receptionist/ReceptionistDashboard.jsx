@@ -1,16 +1,18 @@
 import { useState, useMemo } from "react";
-import { Card, Button, Icon, Badge, Table, Modal, Input } from "@/components";
+import { Card, Button, Icon, Badge, Table, Modal, Input, PaymentModal } from "@/components";
 import { useAppointments, useUpdateAppointmentStatus, useCancelAppointment } from "@/hooks/useAppointments";
 import { useUsers } from "@/hooks/useUsers";
 import { usePatients, useCreatePatient } from "@/hooks/usePatients";
 import { useForm } from "react-hook-form";
 import { classNames } from "@/utils";
-import { APPOINTMENT_STATUS, STATUS_COLORS, ROLES, ROUTES } from "@/constants/appConstants";
+import { APPOINTMENT_STATUS, STATUS_COLORS, ROLES, ROUTES, PAYMENT_STATUS_COLORS } from "@/constants/appConstants";
 import toast from "react-hot-toast";
 
 function ReceptionistDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedAppointmentForPayment, setSelectedAppointmentForPayment] = useState(null);
   
   const { data: appointmentsData, isLoading } = useAppointments();
   const { data: doctorsData } = useUsers({ role: ROLES.DOCTOR });
@@ -36,6 +38,26 @@ function ReceptionistDashboard() {
       pending: apps.filter(a => a.status === APPOINTMENT_STATUS.PENDING).length,
       cancelled: apps.filter(a => a.status === APPOINTMENT_STATUS.CANCELLED).length,
       availableSlots: 20 - apps.length, // Simulated capacity
+    };
+  }, [todayAppointments]);
+
+  // Financial stats calculation
+  const financialStats = useMemo(() => {
+    const apps = todayAppointments;
+    let expected = 0;
+    let collected = 0;
+    apps.forEach((a) => {
+      if (a.status !== APPOINTMENT_STATUS.CANCELLED) {
+        const price = parseFloat(a.price) || 0;
+        const paid = parseFloat(a.paidAmount) || 0;
+        expected += price;
+        collected += paid;
+      }
+    });
+    return {
+      expected,
+      collected,
+      pending: expected - collected,
     };
   }, [todayAppointments]);
 
@@ -183,6 +205,19 @@ function ReceptionistDashboard() {
                 )
               },
               {
+                header: "Payment",
+                render: (row) => (
+                  <div className="flex flex-col">
+                    <Badge tone={PAYMENT_STATUS_COLORS[row.paymentStatus || 'unpaid'] || "secondary"} className="uppercase font-black text-[9px] tracking-widest w-fit">
+                      {row.paymentStatus || 'unpaid'}
+                    </Badge>
+                    <span className="text-[10px] text-slate-400 mt-1 font-bold">
+                      ${row.paidAmount || 0} / ${row.price || 0}
+                    </span>
+                  </div>
+                ),
+              },
+              {
                 header: "Status",
                 render: (row) => (
                   <Badge tone={STATUS_COLORS[row.status] || "secondary"} className="uppercase font-black text-[9px] tracking-widest">
@@ -193,7 +228,7 @@ function ReceptionistDashboard() {
               {
                 header: "Action",
                 render: (row) => (
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     {row.status === APPOINTMENT_STATUS.PENDING && (
                       <Button
                         variant="success"
@@ -202,6 +237,20 @@ function ReceptionistDashboard() {
                         onClick={() => handleCheckIn(row.id)}
                       >
                         Check-in
+                      </Button>
+                    )}
+                    {row.paymentStatus !== "paid" && row.status !== APPOINTMENT_STATUS.CANCELLED && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2.5 text-[10px] font-black uppercase tracking-widest text-brand-600 border-brand-100 hover:bg-brand-50 flex items-center gap-1"
+                        onClick={() => {
+                          setSelectedAppointmentForPayment(row);
+                          setIsPaymentModalOpen(true);
+                        }}
+                      >
+                        <Icon name="faMoneyBillWave" />
+                        Collect
                       </Button>
                     )}
                     <Button
@@ -223,6 +272,26 @@ function ReceptionistDashboard() {
 
         {/* Doctor Availability & Conflict Watch */}
         <div className="space-y-8">
+           {/* Daily Cash Drawer */}
+           <Card title="Daily Cash Drawer" description="Real-time financial collection tracking." className="border-emerald-100 bg-emerald-50/10">
+              <div className="mt-4 space-y-4">
+                 <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm text-center">
+                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Collected</span>
+                       <span className="text-base font-black text-emerald-600 block mt-0.5">${financialStats.collected.toFixed(2)}</span>
+                    </div>
+                    <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm text-center">
+                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Pending</span>
+                       <span className="text-base font-black text-rose-600 block mt-0.5">${financialStats.pending.toFixed(2)}</span>
+                    </div>
+                 </div>
+                 <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-600">Total Expected Value:</span>
+                    <span className="font-black text-slate-800">${financialStats.expected.toFixed(2)}</span>
+                 </div>
+              </div>
+           </Card>
+
            <Card title="Conflict Watch" description="Automated collision detection." className="border-rose-100 bg-rose-50/20">
               <div className="mt-4 space-y-4">
                  {stats.total > 15 ? (
@@ -248,20 +317,20 @@ function ReceptionistDashboard() {
            <Card title="Doctor Status" description="Real-time clinical availability.">
               <div className="mt-6 space-y-5">
                  {doctorsData?.data.slice(0, 4).map((doc, i) => (
-                   <div key={i} className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
-                      <div className="flex items-center gap-3">
-                         <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center font-bold text-slate-400 border border-slate-100 shadow-sm">
-                            {doc.name.charAt(0)}
-                         </div>
-                         <div>
-                            <p className="text-sm font-bold text-slate-900 leading-none">{doc.name}</p>
-                            <p className="text-[10px] font-black text-slate-400 uppercase mt-1 tracking-widest">{doc.specialty || 'General'}</p>
-                         </div>
-                      </div>
-                      <Badge tone={i % 3 === 0 ? 'success' : 'warning'} className="h-6 px-2 text-[9px] uppercase font-black">
-                         {i % 3 === 0 ? 'Active' : 'Away'}
-                      </Badge>
-                   </div>
+                    <div key={i} className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
+                       <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center font-bold text-slate-400 border border-slate-100 shadow-sm">
+                             {doc.name.charAt(0)}
+                          </div>
+                          <div>
+                             <p className="text-sm font-bold text-slate-900 leading-none">{doc.name}</p>
+                             <p className="text-[10px] font-black text-slate-400 uppercase mt-1 tracking-widest">{doc.specialty || 'General'}</p>
+                          </div>
+                       </div>
+                       <Badge tone={i % 3 === 0 ? 'success' : 'warning'} className="h-6 px-2 text-[9px] uppercase font-black">
+                          {i % 3 === 0 ? 'Active' : 'Away'}
+                       </Badge>
+                    </div>
                  ))}
               </div>
            </Card>
@@ -295,8 +364,21 @@ function ReceptionistDashboard() {
             </div>
          </form>
       </Modal>
+
+      {/* Collect In-Clinic Payment Modal */}
+      {selectedAppointmentForPayment && (
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => {
+            setIsPaymentModalOpen(false);
+            setSelectedAppointmentForPayment(null);
+          }}
+          appointment={selectedAppointmentForPayment}
+        />
+      )}
     </div>
   );
 }
 
 export default ReceptionistDashboard;
+
