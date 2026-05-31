@@ -42,13 +42,13 @@ export function useCreateAppointment() {
   });
 }
 
-export function useUpdateAppointment() {
+export function useUpdateAppointment({ silent = false } = {}) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }) => appointmentsApi.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("Appointment updated!");
+      if (!silent) toast.success("Appointment updated!");
     },
     onError: (err) => toast.error(err.message || "Failed to update appointment."),
   });
@@ -78,13 +78,13 @@ export function useDeleteAppointment() {
   });
 }
 
-export function useUpdateAppointmentStatus() {
+export function useUpdateAppointmentStatus({ silent = false } = {}) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status }) => appointmentsApi.update(id, { status }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("Status updated successfully!");
+      if (!silent) toast.success("Status updated successfully!");
     },
     onError: (err) => toast.error(err.message || "Failed to update status."),
   });
