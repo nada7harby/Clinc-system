@@ -5,35 +5,35 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: "#f9f6f6",
-          100: "#f3eded",
-          200: "#e5d9d9",
-          300: "#d1bebe",
-          400: "#a87c7c",
-          500: "#7e6363", // Primary
-          600: "#6d5454",
-          700: "#5a4545",
-          800: "#493939",
-          900: "#3d3030",
-          950: "#211919",
+          50: "#eef5ff",
+          100: "#d8e7ff",
+          200: "#b6d1ff",
+          300: "#83b2f7",
+          400: "#4f86cf",
+          500: "#1f4072", // Prussian Blue
+          600: "#1a3866",
+          700: "#162f58",
+          800: "#122746",
+          900: "#0f213a",
+          950: "#081426",
         },
         accent: {
-          glow: "#ffbaba",
-          soft: "#fff0f0",
-          DEFAULT: "#e89999",
+          glow: "#fff3b4",
+          soft: "#fff9df",
+          DEFAULT: "#fff3b4",
         },
         ink: {
           900: "#0a1020",
           950: "#050810",
         },
         surface: {
-          50: "#fcfaf7",
-          100: "#f7f2ee",
+          50: "#fffdf2",
+          100: "#fff7cf",
         },
         primary: {
-          DEFAULT: "#7e6363",
-          dark: "#493939",
-          light: "#f3eded",
+          DEFAULT: "#1f4072",
+          dark: "#122746",
+          light: "#d8e7ff",
         },
         secondary: {
           DEFAULT: "#0a1020",
@@ -41,10 +41,10 @@ export default {
       },
       boxShadow: {
         premium: "0 18px 40px -18px rgba(12, 20, 40, 0.25)",
-        glass: "0 18px 60px -35px rgba(126, 99, 99, 0.35)",
-        glow: "0 0 28px rgba(126, 99, 99, 0.35)",
+        glass: "0 18px 60px -35px rgba(31, 64, 114, 0.35)",
+        glow: "0 0 28px rgba(31, 64, 114, 0.35)",
         halo:
-          "0 0 0 1px rgba(126, 99, 99, 0.25), 0 0 30px rgba(232, 153, 153, 0.18)",
+          "0 0 0 1px rgba(31, 64, 114, 0.25), 0 0 30px rgba(255, 243, 180, 0.35)",
       },
       borderRadius: {
         "2xl": "1.25rem",

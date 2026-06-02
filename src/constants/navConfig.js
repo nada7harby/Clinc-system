@@ -35,6 +35,18 @@ export const getNavItems = (role) => {
       href: ROUTES.patients,
       icon: "faHospitalUser",
     },
+    {
+      label: "Inventory ERP",
+      labelKey: "nav.inventoryErp",
+      href: ROUTES.dashboard + "#inventory",
+      icon: "faBoxesStacked",
+    },
+    {
+      label: "HIPAA Security Logs",
+      labelKey: "nav.auditLogs",
+      href: ROUTES.dashboard + "#hipaa",
+      icon: "faShieldHalved",
+    },
   ];
 
   const doctor = [

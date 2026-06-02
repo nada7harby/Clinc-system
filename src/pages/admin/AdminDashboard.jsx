@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -268,6 +268,23 @@ function AdminDashboard() {
     setAuditLogs(prev => [newLog, ...prev]);
   };
 
+  // Dynamic smooth scrolling hash anchor navigation
+  useEffect(() => {
+    const handleHashScroll = () => {
+      if (window.location.hash) {
+        const el = document.getElementById(window.location.hash.substring(1));
+        if (el) {
+          setTimeout(() => {
+            el.scrollIntoView({ behavior: "smooth" });
+          }, 100);
+        }
+      }
+    };
+    handleHashScroll();
+    window.addEventListener("hashchange", handleHashScroll);
+    return () => window.removeEventListener("hashchange", handleHashScroll);
+  }, []);
+
   // Switch branches handler
   const handleBranchChange = (branchKey) => {
     setCurrentBranch(branchKey);
@@ -424,7 +441,7 @@ function AdminDashboard() {
 
   // Recharts color palette
   const appointmentDistribution = [
-    { name: "New Patient", value: 38, color: "#7e6363" },
+    { name: "New Patient", value: 38, color: "#1f4072" },
     { name: "Follow-up", value: 44, color: "#307672" },
     { name: "Diagnostics", value: 18, color: "#f59e0b" },
   ];
@@ -524,7 +541,7 @@ function AdminDashboard() {
       </header>
 
       {/* KPI Cards Grid - Bound to Selected Branch */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Revenue"
           value={`$${(branchInfo.totalRevenue / 1000).toFixed(1)}k`}
@@ -532,24 +549,6 @@ function AdminDashboard() {
           trend="up"
           trendValue="11.6%"
           variant="warning"
-          layout="compact"
-        />
-        <StatCard
-          title="Daily Appointments"
-          value={branchInfo.dailyAppointments}
-          icon="faCalendarCheck"
-          trend="up"
-          trendValue="6.8%"
-          variant="success"
-          layout="compact"
-        />
-        <StatCard
-          title="Cancellation Rate"
-          value={`${branchInfo.cancellationRate}%`}
-          icon="faBan"
-          trend="down"
-          trendValue="1.3%"
-          variant="danger"
           layout="compact"
         />
         <StatCard
@@ -562,21 +561,21 @@ function AdminDashboard() {
           layout="compact"
         />
         <StatCard
+          title="Daily Appointments"
+          value={branchInfo.dailyAppointments}
+          icon="faCalendarCheck"
+          trend="up"
+          trendValue="6.8%"
+          variant="success"
+          layout="compact"
+        />
+        <StatCard
           title="Clinic Occupancy"
           value={`${branchInfo.clinicOccupancy}%`}
           icon="faHeartbeat"
           trend="up"
           trendValue="3.4%"
           variant="success"
-          layout="compact"
-        />
-        <StatCard
-          title="Performance"
-          value={branchInfo.performanceScore}
-          icon="faStar"
-          trend="up"
-          trendValue="0.2"
-          variant="primary"
           layout="compact"
         />
       </div>
@@ -795,7 +794,7 @@ function AdminDashboard() {
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* SMART INVENTORY ERP SECTION */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
-      <section className="space-y-6">
+      <section id="inventory" className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="hud-chip bg-brand-50 text-brand-600">Inventory ERP & Pharmacy</div>
@@ -942,7 +941,7 @@ function AdminDashboard() {
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* HIPAA AUDIT LOG CONSOLE SECTION */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
-      <section className="space-y-6">
+      <section id="hipaa" className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="hud-chip bg-emerald-50 text-emerald-600">HIPAA Security Center</div>

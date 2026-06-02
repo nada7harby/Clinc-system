@@ -419,7 +419,7 @@ function AppointmentsPage() {
               <div className="flex flex-col items-center rounded-[28px] border-2 border-dashed border-brand-100 bg-gradient-to-br from-brand-50/50 to-surface-100 py-16 text-center">
                 <div
                   className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-                  style={{ background: "linear-gradient(135deg,#f9f6f6,#eef5f2)" }}
+                  style={{ background: "linear-gradient(135deg,#fffdf2,#fff3b4)" }}
                 >
                   <Icon
                     name="faCalendarPlus"
@@ -439,8 +439,8 @@ function AppointmentsPage() {
                     <button
                       className="rounded-2xl px-7 py-3.5 text-[13px] font-black text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
                       style={{
-                        background: "linear-gradient(135deg,#7e6363,#9e7777)",
-                        boxShadow: "0 6px 24px rgba(126,99,99,0.35)",
+                        background: "linear-gradient(135deg,#1f4072,#4f86cf)",
+                        boxShadow: "0 6px 24px rgba(31,64,114,0.35)",
                       }}
                     >
                       Book Your First Appointment

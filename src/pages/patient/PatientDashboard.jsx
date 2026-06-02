@@ -52,13 +52,13 @@ const VITALS = [
     icon: "faHeartbeat",
     trendKey: "patient.vitals.stable",
     statusKey: "patient.vitals.normal",
-    gradFrom: "#fff5f5",
-    gradTo: "#fff0f5",
-    ring: "ring-rose-100",
-    iconBg: "bg-rose-50",
-    iconColor: "text-rose-500",
-    dotColor: "bg-rose-400",
-    statusColor: "text-rose-500",
+    gradFrom: "#fffdf2",
+    gradTo: "#fff3b4",
+    ring: "ring-brand-100",
+    iconBg: "bg-accent-soft",
+    iconColor: "text-brand-600",
+    dotColor: "bg-brand-400",
+    statusColor: "text-brand-600",
   },
   {
     key: "hr",
@@ -209,13 +209,13 @@ function PatientDashboard() {
         className="relative overflow-hidden rounded-[28px] p-6"
         style={{
           background:
-            "linear-gradient(145deg, #f9f6f6 0%, #f0f7f4 48%, #f7f0f5 100%)",
+            "linear-gradient(145deg, #fffdf2 0%, #eef5ff 48%, #fff3b4 100%)",
         }}
       >
         {/* Decorative blobs */}
         <Link
           className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full blur-3xl"
-          style={{ background: "rgba(126,99,99,0.12)" }}
+          style={{ background: "rgba(31,64,114,0.14)" }}
           onClick={() => handleQuickAction(action.label)}
         />
         <div
@@ -230,7 +230,7 @@ function PatientDashboard() {
               <div
                 className="flex h-[58px] w-[58px] items-center justify-center rounded-full text-xl font-black text-white shadow-md ring-[3px] ring-white"
                 style={{
-                  background: "linear-gradient(135deg, #7e6363, #a88080)",
+                  background: "linear-gradient(135deg, #1f4072, #4f86cf)",
                 }}
               >
                 {firstName.charAt(0).toUpperCase()}
@@ -267,7 +267,7 @@ function PatientDashboard() {
         <div className="relative mt-4 flex items-center gap-2.5 rounded-xl border border-white/70 bg-white/50 px-3.5 py-2.5 backdrop-blur-sm">
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: "rgba(126,99,99,0.1)" }}
+            style={{ background: "rgba(31,64,114,0.1)" }}
           >
             <Icon
               name="faShieldHalved"
@@ -294,8 +294,8 @@ function PatientDashboard() {
                 style={
                   action.isPrimary
                     ? {
-                        background: "linear-gradient(135deg, #7e6363, #a08080)",
-                        boxShadow: "0 4px 16px rgba(126,99,99,0.3)",
+                        background: "linear-gradient(135deg, #1f4072, #4f86cf)",
+                        boxShadow: "0 4px 16px rgba(31,64,114,0.3)",
                       }
                     : {}
                 }
@@ -361,13 +361,13 @@ function PatientDashboard() {
               className="relative overflow-hidden rounded-[28px] p-6 text-white"
               style={{
                 background:
-                  "linear-gradient(145deg, #1e293b 0%, #0f172a 65%, #1c1828 100%)",
+                  "linear-gradient(145deg, #1f4072 0%, #122746 65%, #081426 100%)",
               }}
             >
               {/* Glow orbs */}
               <div
                 className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl"
-                style={{ background: "rgba(126,99,99,0.28)" }}
+                style={{ background: "rgba(255,243,180,0.2)" }}
               />
               <div
                 className="pointer-events-none absolute -bottom-12 left-8 h-48 w-48 rounded-full blur-3xl"
@@ -420,7 +420,7 @@ function PatientDashboard() {
                   <div
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black text-white"
                     style={{
-                      background: "linear-gradient(135deg,#7e6363,#a08080)",
+                      background: "linear-gradient(135deg,#1f4072,#4f86cf)",
                     }}
                   >
                     {stats.next.doctorName?.charAt(0) || "D"}
@@ -436,8 +436,8 @@ function PatientDashboard() {
                   <span
                     className="shrink-0 rounded-xl px-2.5 py-1 text-[10px] font-black text-brand-300"
                     style={{
-                      background: "rgba(126,99,99,0.25)",
-                      border: "1px solid rgba(126,99,99,0.35)",
+                      background: "rgba(255,243,180,0.16)",
+                      border: "1px solid rgba(255,243,180,0.24)",
                     }}
                   >
                     {stats.next.serviceName || t("patient.header.consultation", { defaultValue: "Consultation" })}
@@ -451,7 +451,7 @@ function PatientDashboard() {
                   <button
                     className="w-full rounded-2xl py-3 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:opacity-90 active:scale-95"
                     style={{
-                      background: "linear-gradient(135deg, #7e6363, #9e7777)",
+                      background: "linear-gradient(135deg, #1f4072, #4f86cf)",
                     }}
                   >
                     {t("patient.header.manageBooking")}
@@ -481,7 +481,7 @@ function PatientDashboard() {
               <div
                 className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
                 style={{
-                  background: "linear-gradient(135deg, #f9f6f6, #eef5f2)",
+                  background: "linear-gradient(135deg, #fffdf2, #fff3b4)",
                 }}
               >
                 <Icon
@@ -499,8 +499,8 @@ function PatientDashboard() {
                 <button
                   className="rounded-2xl px-7 py-3.5 text-[13px] font-black text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
                   style={{
-                    background: "linear-gradient(135deg, #7e6363, #9e7777)",
-                    boxShadow: "0 6px 24px rgba(126,99,99,0.35)",
+                    background: "linear-gradient(135deg, #1f4072, #4f86cf)",
+                    boxShadow: "0 6px 24px rgba(31,64,114,0.35)",
                   }}
                 >
                   {t("patient.dashboard.bookFirst")}
@@ -722,13 +722,13 @@ function PatientDashboard() {
         <div
           className="relative overflow-hidden rounded-[24px] p-5"
           style={{
-            background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
+            background: "linear-gradient(145deg, #1f4072 0%, #122746 100%)",
           }}
         >
           {/* Glow */}
           <div
             className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full blur-3xl"
-            style={{ background: "rgba(126,99,99,0.3)" }}
+            style={{ background: "rgba(255,243,180,0.22)" }}
           />
 
           <div className="relative flex items-center gap-3.5">
@@ -752,7 +752,7 @@ function PatientDashboard() {
             <button
               className="ml-auto shrink-0 rounded-xl px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 active:scale-95"
               style={{
-                background: "linear-gradient(135deg, #7e6363, #9e7777)",
+                background: "linear-gradient(135deg, #4f86cf, #1f4072)",
               }}
             >
               {t("patient.dashboard.callNow")}
@@ -796,8 +796,8 @@ function PatientDashboard() {
           whileTap={{ scale: 0.95 }}
           className="flex h-14 w-14 items-center justify-center rounded-full text-white"
           style={{
-            background: "linear-gradient(135deg, #7e6363, #9e7777)",
-            boxShadow: "0 8px 32px rgba(126,99,99,0.45)",
+            background: "linear-gradient(135deg, #1f4072, #4f86cf)",
+            boxShadow: "0 8px 32px rgba(31,64,114,0.45)",
           }}
           title={t("patient.dashboard.bookFab")}
         >

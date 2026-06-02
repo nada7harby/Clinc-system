@@ -5,15 +5,15 @@
 @tailwind utilities;
 
 :root {
-  --brand-primary: #7e6363;
+  --brand-primary: #1f4072;
   --brand-secondary: #0a1020;
-  --brand-accent: #e89999;
-  --surface-0: #fcfaf7;
-  --surface-1: #f7f2ee;
+  --brand-accent: #fff3b4;
+  --surface-0: #fffdf2;
+  --surface-1: #fff7cf;
   --ink-950: #050810;
   --ink-900: #0a1020;
-  --glow-cyan: rgba(232, 153, 153, 0.28);
-  --glow-blue: rgba(126, 99, 99, 0.3);
+  --glow-cyan: rgba(255, 243, 180, 0.38);
+  --glow-blue: rgba(31, 64, 114, 0.3);
   color-scheme: light;
 }
 
@@ -23,12 +23,12 @@
     font-family: "Sora", sans-serif;
     background-image: radial-gradient(
         circle at 20% 20%,
-        rgba(126, 99, 99, 0.12),
+        rgba(31, 64, 114, 0.12),
         transparent 40%
       ),
       radial-gradient(
         circle at 80% 10%,
-        rgba(232, 153, 153, 0.15),
+        rgba(255, 243, 180, 0.42),
         transparent 45%
       ),
       radial-gradient(
@@ -71,9 +71,9 @@
     min-height: 100vh;
     background: linear-gradient(
       135deg,
-      rgba(247, 249, 252, 1) 0%,
-      rgba(236, 242, 255, 1) 45%,
-      rgba(238, 249, 248, 1) 100%
+      rgba(255, 253, 242, 1) 0%,
+      rgba(238, 245, 255, 1) 48%,
+      rgba(255, 247, 207, 1) 100%
     );
     overflow: hidden;
   }
@@ -88,7 +88,7 @@
     border-radius: 50%;
     background: radial-gradient(
       circle,
-      rgba(126, 99, 99, 0.18),
+      rgba(31, 64, 114, 0.18),
       transparent 60%
     );
     filter: blur(0px);
@@ -101,7 +101,7 @@
     height: 560px;
     background: radial-gradient(
       circle,
-      rgba(232, 153, 153, 0.2),
+      rgba(255, 243, 180, 0.42),
       transparent 62%
     );
   }
@@ -119,8 +119,8 @@
   }
 
   .glow-ring {
-    box-shadow: 0 0 0 1px rgba(126, 99, 99, 0.25),
-      0 0 24px rgba(126, 99, 99, 0.25);
+    box-shadow: 0 0 0 1px rgba(31, 64, 114, 0.25),
+      0 0 24px rgba(31, 64, 114, 0.25);
   }
 
   .grid-fade {
@@ -308,4 +308,3 @@
     border: 1px solid #e2e8f0 !important;
   }
 }
-

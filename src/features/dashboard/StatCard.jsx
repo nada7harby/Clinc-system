@@ -18,7 +18,7 @@ function StatCard({
       iconBg: "bg-brand-50 border-brand-100",
       iconColor: "text-brand-600",
       glow: "bg-brand-500",
-      trendBg: "bg-brand-50",
+      trendBg: "bg-brand-50 border-brand-100/50",
       trendText: "text-brand-600",
     },
     success: {
@@ -26,7 +26,7 @@ function StatCard({
       iconBg: "bg-emerald-50 border-emerald-100",
       iconColor: "text-emerald-600",
       glow: "bg-emerald-500",
-      trendBg: "bg-emerald-50",
+      trendBg: "bg-emerald-50 border-emerald-100/50",
       trendText: "text-emerald-600",
     },
     warning: {
@@ -34,7 +34,7 @@ function StatCard({
       iconBg: "bg-amber-50 border-amber-100",
       iconColor: "text-amber-600",
       glow: "bg-amber-500",
-      trendBg: "bg-amber-50",
+      trendBg: "bg-amber-50 border-amber-100/50",
       trendText: "text-amber-600",
     },
     danger: {
@@ -42,24 +42,25 @@ function StatCard({
       iconBg: "bg-rose-50 border-rose-100",
       iconColor: "text-rose-600",
       glow: "bg-rose-500",
-      trendBg: "bg-rose-50",
+      trendBg: "bg-rose-50 border-rose-100/50",
       trendText: "text-rose-600",
     },
   };
 
   const currentStyle = styles[variant] || styles.primary;
   const isCompact = layout === "compact";
+  
   const trendBadge = trend ? (
     <div
       className={classNames(
-        "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm",
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm shrink-0",
         currentStyle.trendBg,
         currentStyle.trendText,
       )}
     >
       <Icon
         name={trend === "up" ? "faArrowUp" : "faArrowDown"}
-        className="text-[9px]"
+        className="text-[8px]"
       />
       {trendValue}
     </div>
@@ -67,103 +68,104 @@ function StatCard({
 
   return (
     <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="relative group cursor-pointer"
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      className="relative group cursor-pointer h-full"
     >
+      {/* Premium Glass Hover Glow */}
       <div
         className={classNames(
-          "absolute inset-0 rounded-[32px] bg-gradient-to-br opacity-50 transition-opacity duration-500 group-hover:opacity-100",
+          "absolute inset-0 rounded-2xl bg-gradient-to-br opacity-0 group-hover:opacity-60 transition-opacity duration-500 blur-sm -z-10",
           currentStyle.bg,
         )}
       ></div>
 
       <Card
         className={classNames(
-          "relative h-full border border-white/40 bg-white/60 p-0 backdrop-blur-xl transition-all duration-500",
-          "rounded-[32px] shadow-glass group-hover:shadow-premium group-hover:bg-white overflow-hidden",
+          "relative h-full border border-slate-100 bg-white/70 backdrop-blur-md transition-all duration-500 overflow-hidden",
+          "rounded-2xl shadow-sm hover:shadow-lg hover:border-slate-200/60 hover:bg-white p-0",
         )}
         variant="outline"
       >
         {isCompact ? (
-          <div className="p-4 relative z-10">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                {title}
-              </h3>
-              {trendBadge}
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              {isLoading ? (
-                <div className="h-8 w-20 animate-pulse rounded-lg bg-slate-100"></div>
-              ) : (
-                <span className="text-2xl font-black tracking-tight text-slate-900 leading-none group-hover:text-brand-700 transition-colors duration-500">
-                  {value}
-                </span>
-              )}
-              <div
-                className={classNames(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-all duration-500 group-hover:scale-105 group-hover:-rotate-2",
-                  currentStyle.iconBg,
-                  currentStyle.iconColor,
-                )}
-              >
-                <Icon name={iconName} className="text-base" />
-              </div>
-            </div>
-            <div className="mt-3 text-[10px] font-semibold text-slate-400">
-              Compare to previous
-            </div>
-          </div>
-        ) : (
-          <div className="p-6 relative z-10 flex flex-col h-full justify-between">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">
+          /* COMPACT LAYOUT: Tight padding, value right below title, trend next to base text at the bottom row */
+          <div className="p-3.5 relative z-10 flex flex-col justify-between h-full min-h-[112px]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1">
+                <h3 
+                  className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate pr-1"
+                  title={title}
+                >
                   {title}
                 </h3>
                 {isLoading ? (
-                  <div className="mt-2 h-10 w-24 animate-pulse rounded-lg bg-slate-100"></div>
+                  <div className="h-6 w-16 animate-pulse rounded-lg bg-slate-100"></div>
                 ) : (
-                  <div className="flex items-end gap-3 mt-2">
-                    <span className="text-4xl font-black tracking-tighter text-slate-900 leading-none group-hover:text-brand-700 transition-colors duration-500">
-                      {value}
-                    </span>
-                  </div>
+                  <span className="text-2xl font-black tracking-tight text-slate-950 leading-none group-hover:text-brand-600 transition-colors duration-300 block">
+                    {value}
+                  </span>
+                )}
+              </div>
+              
+              <div
+                className={classNames(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:rotate-6",
+                  currentStyle.iconBg,
+                  currentStyle.iconColor,
+                )}
+              >
+                <Icon name={iconName} className="text-xs" />
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              {trendBadge}
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                vs previous
+              </span>
+            </div>
+          </div>
+        ) : (
+          /* STANDARD LAYOUT: Improved spacing and distribution, value right below title */
+          <div className="p-4.5 relative z-10 flex flex-col h-full justify-between min-h-[140px]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1.5">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">
+                  {title}
+                </h3>
+                {isLoading ? (
+                  <div className="h-7 w-20 animate-pulse rounded-lg bg-slate-100"></div>
+                ) : (
+                  <span className="text-2xl.5 font-black tracking-tight text-slate-950 leading-none group-hover:text-brand-600 transition-colors duration-300 block">
+                    {value}
+                  </span>
                 )}
               </div>
 
               <div
                 className={classNames(
-                  "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:-rotate-3",
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:rotate-3",
                   currentStyle.iconBg,
                   currentStyle.iconColor,
                 )}
               >
-                <Icon name={iconName} className="text-xl" />
+                <Icon name={iconName} className="text-sm" />
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-200/40 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400">
-                Compare to previous
+            <div className="mt-4 pt-3 border-t border-slate-100/60 flex items-center justify-between flex-wrap gap-2">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                vs previous period
               </span>
               {trendBadge}
             </div>
           </div>
         )}
 
-        {/* Decorative elements */}
+        {/* Dynamic Abstract Visual Gradients */}
         <div
           className={classNames(
-            "absolute -right-12 -bottom-12 h-48 w-48 rounded-full blur-3xl opacity-10 transition-opacity duration-500 group-hover:opacity-30",
-            currentStyle.glow,
-          )}
-        ></div>
-
-        <div
-          className={classNames(
-            "absolute -top-6 -right-6 h-20 w-20 rounded-full blur-2xl opacity-20 transition-all duration-500 group-hover:scale-150",
+            "absolute -right-16 -bottom-16 h-36 w-36 rounded-full blur-3xl opacity-5 transition-opacity duration-500 group-hover:opacity-20 pointer-events-none -z-10",
             currentStyle.glow,
           )}
         ></div>
