@@ -52,6 +52,14 @@ const router = createBrowserRouter([
         path: "admin", 
         element: <ProtectedRoute allowedRoles={[ROLES.ADMIN]}><AdminDashboard /></ProtectedRoute> 
       },
+      {
+        path: "admin/inventory",
+        element: <ProtectedRoute allowedRoles={[ROLES.ADMIN]}><AdminDashboard view="inventory" /></ProtectedRoute>
+      },
+      {
+        path: "admin/hipaa",
+        element: <ProtectedRoute allowedRoles={[ROLES.ADMIN]}><AdminDashboard view="hipaa" /></ProtectedRoute>
+      },
       { 
         path: "users", 
         element: <ProtectedRoute allowedRoles={[ROLES.ADMIN]}><UsersManagement /></ProtectedRoute> 

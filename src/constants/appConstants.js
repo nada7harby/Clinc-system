@@ -14,6 +14,8 @@ export const ROUTES = {
   dashboard: "/dashboard",
   // Admin
   adminDashboard: "/dashboard/admin",
+  inventoryErp: "/dashboard/admin/inventory",
+  auditLogs: "/dashboard/admin/hipaa",
   users: "/dashboard/users",
   services: "/dashboard/services",
   // Doctor

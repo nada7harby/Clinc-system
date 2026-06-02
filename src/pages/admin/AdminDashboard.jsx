@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -14,22 +14,34 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import {
-  useStats,
-  useRevenueChart,
-  useStatusChart,
-  useBookingsChart,
-  useTopDoctors,
-} from "@/hooks/useAnalytics";
-import { useUsers } from "@/hooks/useUsers";
 import StatCard from "@/features/dashboard/StatCard";
 import { Card, Icon, Button, Badge, Table, Modal, Input } from "@/components";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { classNames } from "@/utils";
-import { ROLES, STATUS_COLORS } from "@/constants/appConstants";
 import toast from "react-hot-toast";
 
 const MotionDiv = motion.div;
+const HASH_GENESIS =
+  "0000000000000000000000000000000000000000000000000000000000000000";
+
+function generateSimulatedHash(seed) {
+  let state = 2166136261;
+  const source = String(seed || "clinic-ledger");
+
+  for (let i = 0; i < source.length; i += 1) {
+    state ^= source.charCodeAt(i);
+    state = Math.imul(state, 16777619);
+  }
+
+  let hash = "";
+  for (let i = 0; i < 8; i += 1) {
+    state ^= i + source.length;
+    state = Math.imul(state, 16777619);
+    hash += (state >>> 0).toString(16).padStart(8, "0");
+  }
+
+  return hash;
+}
 
 // ── Multi-Branch Mock Datasets ───────────────────────────────────────────────
 const BRANCH_DATASETS = {
@@ -189,16 +201,36 @@ const BRANCH_DATASETS = {
   }
 };
 
-function AdminDashboard() {
+function AdminDashboard({ view = "overview" }) {
   const [currentBranch, setCurrentBranch] = useState("cairo");
   const branchInfo = BRANCH_DATASETS[currentBranch];
+  const isOverview = view === "overview";
+  const isInventory = view === "inventory";
+  const isHipaa = view === "hipaa";
+  const pageMeta = {
+    overview: {
+      eyebrow: "Decision Center - Multi-Branch ERP",
+      title: "Clinic Overview",
+      subtitle: "Enterprise performance, queues, and branch-level analytics.",
+    },
+    inventory: {
+      eyebrow: "Inventory ERP - Pharmacy & Supplies",
+      title: "Inventory ERP",
+      subtitle: "Clinical stock operations, reorder points, restocking, and expiry control.",
+    },
+    hipaa: {
+      eyebrow: "HIPAA Security Center",
+      title: "HIPAA Security Logs",
+      subtitle: "Cryptographically-signed audit trail for enterprise compliance.",
+    },
+  }[view] || {
+    eyebrow: "Decision Center - Multi-Branch ERP",
+    title: "Clinic Overview",
+    subtitle: "Enterprise performance, queues, and branch-level analytics.",
+  };
 
   // Filters state
   const [period, setPeriod] = useState("monthly");
-  const [doctorFilter, setDoctorFilter] = useState("all");
-  const [dateRange, setDateRange] = useState("30d");
-  const [serviceFilter, setServiceFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   
   // Dynamic Inventory ERP State
   const [inventoryList, setInventoryList] = useState(() => {
@@ -226,6 +258,9 @@ function AdminDashboard() {
       module: "Security",
       timestamp: "Today 09:12",
       source: "192.168.1.112 / Chrome (Windows)",
+      role: "Admin",
+      severity: "info",
+      previousHash: "c39d8e7161b9a2c3a5e8f2294cd81bb98f237f9011de9a98ef2e22c9e7fa1f22",
       hash: "8f9e612803b9da88a91b2c45167f9e8a719c8d374828f32c918ee91ba2d6f831",
       branch: "Cairo Main"
     },
@@ -236,36 +271,48 @@ function AdminDashboard() {
       module: "HIPAA Sync",
       timestamp: "Today 08:00",
       source: "Internal Pipeline / Port 443",
+      role: "System",
+      severity: "success",
+      previousHash: HASH_GENESIS,
       hash: "c39d8e7161b9a2c3a5e8f2294cd81bb98f237f9011de9a98ef2e22c9e7fa1f22",
       branch: "All Branches"
     }
   ]);
   const [logSearch, setLogSearch] = useState("");
   const [logModuleFilter, setLogModuleFilter] = useState("All");
-
-  const { data: doctorsData } = useUsers({ role: ROLES.DOCTOR });
-  const [queueSearch, setQueueSearch] = useState("");
-
-  // Helper to generate simulated cryptographically secure block hashes
-  const generateSimulatedHash = () => {
-    return Array.from({ length: 64 }, () => "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
-  };
+  const [logRoleFilter, setLogRoleFilter] = useState("All");
+  const [logSeverityFilter, setLogSeverityFilter] = useState("All");
 
   // Helper to append log to HIPAA console
-  const addAuditLog = (action, module) => {
+  const addAuditLog = (action, module, options = {}) => {
     const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     const date = "Today";
-    const newLog = {
-      id: `a-${Date.now()}`,
-      user: "Mostafa Mahmoud (Admin)",
-      action,
-      module,
-      timestamp: `${date} ${time}`,
-      source: "197.34.82.90 / Chrome (Egypt)",
-      hash: generateSimulatedHash(),
-      branch: branchInfo.name
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
+    const timestamp = `${date} ${time}`;
+    const role = options.role || "Admin";
+    const severity = options.severity || "info";
+    const branch = options.branchName || branchInfo.name;
+    const source = options.source || "197.34.82.90 / Chrome (Egypt)";
+
+    setAuditLogs(prev => {
+      const previousHash = prev[0]?.hash || HASH_GENESIS;
+      const hash = generateSimulatedHash(
+        `${previousHash}|${role}|${module}|${severity}|${action}|${branch}|${timestamp}|${source}`,
+      );
+      const newLog = {
+        id: `a-${Date.now()}`,
+        user: options.user || "Mostafa Mahmoud (Admin)",
+        role,
+        severity,
+        action,
+        module,
+        timestamp,
+        source,
+        previousHash,
+        hash,
+        branch,
+      };
+      return [newLog, ...prev];
+    });
   };
 
   // Dynamic smooth scrolling hash anchor navigation
@@ -287,19 +334,28 @@ function AdminDashboard() {
 
   // Switch branches handler
   const handleBranchChange = (branchKey) => {
+    const nextBranch = BRANCH_DATASETS[branchKey];
     setCurrentBranch(branchKey);
-    addAuditLog(`Switched management context to branch: ${BRANCH_DATASETS[branchKey].name}`, "Branches");
-    toast.success(`Context loaded for ${BRANCH_DATASETS[branchKey].name}`);
+    addAuditLog(`Switched management context to branch: ${nextBranch.name}`, "Branches", {
+      branchName: nextBranch.name,
+      severity: "info",
+    });
+    toast.success(`Context loaded for ${nextBranch.name}`);
   };
 
   // Dynamic Restocking Simulation
   const handleRestock = (itemId, itemName) => {
+    const branchKey = currentBranch;
+    const branchName = branchInfo.name;
     setRestockingIds(prev => ({ ...prev, [itemId]: true }));
-    addAuditLog(`Initiated restocking request for: ${itemName}`, "Inventory");
+    addAuditLog(`Initiated restocking request for: ${itemName}`, "Inventory", {
+      branchName,
+      severity: "warning",
+    });
 
     setTimeout(() => {
       setInventoryList(prev => {
-        const branchInv = prev[currentBranch].map(item => {
+        const branchInv = prev[branchKey].map(item => {
           if (item.id === itemId) {
             const newQty = item.quantity + 100;
             return {
@@ -310,14 +366,17 @@ function AdminDashboard() {
           }
           return item;
         });
-        return { ...prev, [currentBranch]: branchInv };
+        return { ...prev, [branchKey]: branchInv };
       });
       setRestockingIds(prev => {
         const copy = { ...prev };
         delete copy[itemId];
         return copy;
       });
-      addAuditLog(`Restocked 100 units of ${itemName} (Stock level replenished)`, "Inventory");
+      addAuditLog(`Restocked 100 units of ${itemName} (Stock level replenished)`, "Inventory", {
+        branchName,
+        severity: "success",
+      });
       toast.success(`Successfully restocked 100 units of ${itemName}!`);
     }, 1500);
   };
@@ -343,7 +402,9 @@ function AdminDashboard() {
       });
       return { ...prev, [currentBranch]: branchInv };
     });
-    addAuditLog(`Adjusted Reorder safety point of ${itemName} to ${val} units`, "Inventory");
+    addAuditLog(`Adjusted Reorder safety point of ${itemName} to ${val} units`, "Inventory", {
+      severity: val > 0 ? "info" : "warning",
+    });
     toast.success(`Updated reorder point for ${itemName}`);
   };
 
@@ -381,7 +442,9 @@ function AdminDashboard() {
       [currentBranch]: [...prev[currentBranch], newItem]
     }));
 
-    addAuditLog(`Added new ERP stock item: ${newItemName} (Qty: ${qty}, Reorder Point: ${min})`, "Inventory");
+    addAuditLog(`Added new ERP stock item: ${newItemName} (Qty: ${qty}, Reorder Point: ${min})`, "Inventory", {
+      severity: status === "healthy" ? "success" : "warning",
+    });
     toast.success(`Added ${newItemName} to ${branchInfo.name} inventory!`);
     
     // Reset Form Modal
@@ -439,13 +502,6 @@ function AdminDashboard() {
     return days > 0 && days <= 30;
   }).length;
 
-  // Recharts color palette
-  const appointmentDistribution = [
-    { name: "New Patient", value: 38, color: "#1f4072" },
-    { name: "Follow-up", value: 44, color: "#307672" },
-    { name: "Diagnostics", value: 18, color: "#f59e0b" },
-  ];
-
   const cancellationTrend = [
     { day: "Mon", cancellations: currentBranch === "alex" ? 2 : 3 },
     { day: "Tue", cancellations: currentBranch === "alex" ? 4 : 6 },
@@ -456,24 +512,14 @@ function AdminDashboard() {
     { day: "Sun", cancellations: 1 },
   ];
 
-  const peakHours = [
-    { hour: "08:00", intensity: 0.3 },
-    { hour: "09:00", intensity: 0.5 },
-    { hour: "10:00", intensity: 0.9 },
-    { hour: "11:00", intensity: 0.85 },
-    { hour: "12:00", intensity: 0.7 },
-    { hour: "13:00", intensity: 0.6 },
-    { hour: "14:00", intensity: 0.8 },
-    { hour: "15:00", intensity: 0.65 },
-    { hour: "16:00", intensity: 0.55 },
-    { hour: "17:00", intensity: 0.4 },
-  ];
-
   const filteredLogs = auditLogs.filter(log => {
-    const matchesSearch = log.action.toLowerCase().includes(logSearch.toLowerCase()) || 
-                          log.user.toLowerCase().includes(logSearch.toLowerCase());
+    const query = logSearch.toLowerCase();
+    const matchesSearch = [log.action, log.user, log.source, log.hash, log.branch]
+      .some(value => String(value).toLowerCase().includes(query));
     const matchesModule = logModuleFilter === "All" || log.module === logModuleFilter;
-    return matchesSearch && matchesModule;
+    const matchesRole = logRoleFilter === "All" || log.role === logRoleFilter;
+    const matchesSeverity = logSeverityFilter === "All" || log.severity === logSeverityFilter;
+    return matchesSearch && matchesModule && matchesRole && matchesSeverity;
   });
 
   return (
@@ -487,14 +533,17 @@ function AdminDashboard() {
           <div className="flex items-center gap-2 mb-2">
             <div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse"></div>
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              {pageMeta.eyebrow}
+            </span>
+            <span className="hidden">
               Decision Center • Multi-Branch ERP
             </span>
           </div>
           <h1 className="text-4xl font-black tracking-tight text-slate-950">
-            Clinic Overview
+            {pageMeta.title}
           </h1>
           <p className="text-slate-500 font-medium mt-1">
-            Active: <span className="font-bold text-brand-600">{branchInfo.name}</span>
+            {pageMeta.subtitle} Active: <span className="font-bold text-brand-600">{branchInfo.name}</span>
           </p>
         </div>
         
@@ -513,6 +562,7 @@ function AdminDashboard() {
             </select>
           </div>
 
+          {isOverview && (
           <div className="flex items-center rounded-2xl bg-white p-1.5 border border-slate-100 shadow-sm">
             {[
               { label: "Daily", value: "daily" },
@@ -526,20 +576,34 @@ function AdminDashboard() {
                   "px-4 py-2 text-xs font-bold rounded-xl transition-all",
                   period === option.value
                     ? "bg-slate-950 text-white"
-                    : "text-slate-500 hover:bg-slate-55",
+                    : "text-slate-500 hover:bg-slate-50",
                 )}
               >
                 {option.label}
               </button>
             ))}
           </div>
-          <Button variant="primary" className="gap-2 h-12 rounded-2xl" onClick={() => exportToCsv(filteredLogs, `hipaa-audit-${currentBranch}.csv`)}>
+          )}
+          {isHipaa && (
+          <Button
+            variant="primary"
+            className="gap-2 h-12 rounded-2xl"
+            onClick={() => {
+              addAuditLog("Exported HIPAA audit ledger snapshot", "Security", {
+                severity: "info",
+              });
+              exportToCsv(filteredLogs, `hipaa-audit-${currentBranch}.csv`);
+            }}
+          >
             <Icon name="faFileExport" />
             Export Logs
           </Button>
+          )}
         </div>
       </header>
 
+      {isOverview && (
+      <>
       {/* KPI Cards Grid - Bound to Selected Branch */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -792,8 +856,12 @@ function AdminDashboard() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════════ */}
+      </>
+      )}
+
       {/* SMART INVENTORY ERP SECTION */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {isInventory && (
       <section id="inventory" className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
@@ -802,7 +870,16 @@ function AdminDashboard() {
             <p className="text-xs text-slate-400 font-medium">Real-time depletion alerts and interactive restocking triggers.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="h-11 px-5" onClick={() => exportToCsv(activeInventory, `${currentBranch}-inventory.csv`)}>
+            <Button
+              variant="outline"
+              className="h-11 px-5"
+              onClick={() => {
+                addAuditLog("Exported branch inventory CSV snapshot", "Inventory", {
+                  severity: "info",
+                });
+                exportToCsv(activeInventory, `${currentBranch}-inventory.csv`);
+              }}
+            >
               <Icon name="faFileExport" className="mr-2" /> Export Inventory CSV
             </Button>
             <Button variant="primary" className="h-11 px-5 rounded-2xl gap-2" onClick={() => setIsNewItemModalOpen(true)}>
@@ -821,8 +898,8 @@ function AdminDashboard() {
                     <Icon name="faCircleExclamation" /> Critical Supply Warnings
                   </p>
                   <p className="text-xs font-medium text-rose-600">
-                    {lowStockCount > 0 && `⚠️ ${lowStockCount} items are below or equal to their smart Reorder Points. `}
-                    {expiringSoonCount > 0 && `⏳ ${expiringSoonCount} pharmaceutical items expire within the next 30 days!`}
+                    {lowStockCount > 0 && `Warning: ${lowStockCount} items are below or equal to their smart Reorder Points. `}
+                    {expiringSoonCount > 0 && `Expiry: ${expiringSoonCount} pharmaceutical items expire within the next 30 days.`}
                   </p>
                 </div>
               )}
@@ -873,10 +950,15 @@ function AdminDashboard() {
                     render: (row) => {
                       const isExpiring = getExpiryLabel(row.expiry).includes("days!");
                       return (
-                        <div>
+                        <div className="space-y-1.5">
                           <p className={classNames("text-xs font-semibold", isExpiring ? "text-rose-500 font-bold" : "text-slate-500")}>
                             {getExpiryLabel(row.expiry)}
                           </p>
+                          {isExpiring && (
+                            <Badge tone="danger" className="text-[8px] uppercase tracking-widest">
+                              Near Expiry
+                            </Badge>
+                          )}
                         </div>
                       );
                     },
@@ -937,10 +1019,12 @@ function AdminDashboard() {
           </Card>
         </div>
       </section>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* HIPAA AUDIT LOG CONSOLE SECTION */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {isHipaa && (
       <section id="hipaa" className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
@@ -982,7 +1066,38 @@ function AdminDashboard() {
                 <option value="HIPAA Sync">HIPAA Sync</option>
               </select>
 
-              <Button variant="outline" className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-1.5" onClick={() => exportToCsv(filteredLogs, "hipaa-audit-logs.csv")}>
+              <select
+                value={logRoleFilter}
+                onChange={(e) => setLogRoleFilter(e.target.value)}
+                className="h-10 rounded-2xl border border-slate-200 bg-white px-4 text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none focus:border-brand-500 shadow-sm"
+              >
+                <option value="All">All Roles</option>
+                <option value="Admin">Admin</option>
+                <option value="System">System</option>
+              </select>
+
+              <select
+                value={logSeverityFilter}
+                onChange={(e) => setLogSeverityFilter(e.target.value)}
+                className="h-10 rounded-2xl border border-slate-200 bg-white px-4 text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none focus:border-brand-500 shadow-sm"
+              >
+                <option value="All">All Severities</option>
+                <option value="success">Success</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="critical">Critical</option>
+              </select>
+
+              <Button
+                variant="outline"
+                className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-1.5"
+                onClick={() => {
+                  addAuditLog("Exported filtered HIPAA audit records", "Security", {
+                    severity: "info",
+                  });
+                  exportToCsv(filteredLogs, "hipaa-audit-logs.csv");
+                }}
+              >
                 <Icon name="faFileExport" /> Export HIPAA CSV
               </Button>
             </div>
@@ -995,7 +1110,12 @@ function AdminDashboard() {
                   render: (row) => (
                     <div>
                       <p className="text-sm font-bold text-slate-900">{row.user}</p>
-                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{row.branch}</span>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{row.branch}</span>
+                        <Badge tone="secondary" className="text-[8px] uppercase tracking-widest">
+                          {row.role}
+                        </Badge>
+                      </div>
                     </div>
                   ),
                 },
@@ -1012,6 +1132,21 @@ function AdminDashboard() {
                   ),
                 },
                 {
+                  header: "Severity",
+                  render: (row) => (
+                    <Badge
+                      tone={
+                        row.severity === "critical" ? "danger" :
+                        row.severity === "warning" ? "warning" :
+                        row.severity === "success" ? "success" : "secondary"
+                      }
+                      className="text-[8px] uppercase font-black tracking-widest"
+                    >
+                      {row.severity}
+                    </Badge>
+                  ),
+                },
+                {
                   header: "Action Log Entry",
                   render: (row) => (
                     <div>
@@ -1023,11 +1158,17 @@ function AdminDashboard() {
                 {
                   header: "Integrity Signature Hash",
                   render: (row) => (
-                    <div className="flex items-center gap-1.5 max-w-[240px]">
-                      <Icon name="faLock" className="text-emerald-500 text-[10px]" />
-                      <span className="font-mono text-[9px] text-slate-400 truncate bg-slate-50 px-2 py-1 rounded border border-slate-100" title={row.hash}>
-                        {row.hash}
+                    <div className="max-w-[260px] space-y-2">
+                      <Badge tone="success" className="gap-1 text-[8px] uppercase font-black tracking-widest">
+                        <Icon name="faLock" className="text-[9px]" />
+                        LOG SECURED & SIGNED
+                      </Badge>
+                      <span className="block font-mono text-[9px] text-slate-500 truncate bg-slate-50 px-2 py-1 rounded border border-slate-100" title={row.hash}>
+                        HASH-{row.hash.slice(0, 18)}...
                       </span>
+                      <p className="font-mono text-[8px] text-slate-300 truncate" title={row.previousHash}>
+                        prev: {row.previousHash.slice(0, 18)}...
+                      </p>
                     </div>
                   ),
                 },
@@ -1041,10 +1182,12 @@ function AdminDashboard() {
           </div>
         </Card>
       </section>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* MODAL: ADD INVENTORY STOCK ITEM */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {isInventory && (
       <Modal isOpen={isNewItemModalOpen} onClose={() => setIsNewItemModalOpen(false)} title="Add Supply / Pharmacy Item" size="md">
         <form onSubmit={handleAddInventoryItem} className="space-y-6 pt-4 text-slate-700">
           <div className="space-y-4">
@@ -1106,6 +1249,7 @@ function AdminDashboard() {
           </div>
         </form>
       </Modal>
+      )}
     </MotionDiv>
   );
 }

@@ -1,12 +1,20 @@
 import { ROLES, ROUTES } from "@/constants/appConstants";
 
 export const getNavItems = (role) => {
+  const dashboardRoutes = {
+    [ROLES.ADMIN]: ROUTES.adminDashboard,
+    [ROLES.DOCTOR]: ROUTES.doctorDashboard,
+    [ROLES.RECEPTIONIST]: ROUTES.receptionistDashboard,
+    [ROLES.PATIENT]: ROUTES.patientDashboard,
+  };
+
   const common = [
     {
       label: "Dashboard",
       labelKey: "nav.dashboard",
-      href: ROUTES.dashboard,
+      href: dashboardRoutes[role] || ROUTES.dashboard,
       icon: "faChartLine",
+      end: true,
     },
   ];
 
@@ -38,14 +46,16 @@ export const getNavItems = (role) => {
     {
       label: "Inventory ERP",
       labelKey: "nav.inventoryErp",
-      href: ROUTES.dashboard + "#inventory",
+      href: ROUTES.inventoryErp,
       icon: "faBoxesStacked",
+      end: true,
     },
     {
       label: "HIPAA Security Logs",
       labelKey: "nav.auditLogs",
-      href: ROUTES.dashboard + "#hipaa",
+      href: ROUTES.auditLogs,
       icon: "faShieldHalved",
+      end: true,
     },
   ];
 
@@ -80,12 +90,6 @@ export const getNavItems = (role) => {
   ];
 
   const patient = [
-    {
-      label: "Dashboard",
-      labelKey: "nav.dashboard",
-      href: ROUTES.patientDashboard,
-      icon: "faChartLine",
-    },
     {
       label: "Book Appointment",
       labelKey: "nav.bookAppointment",

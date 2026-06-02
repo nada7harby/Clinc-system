@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
+const MotionSpan = motion.span;
+const MotionDiv = motion.div;
+
 function Sidebar() {
   const { user } = useAuthStore();
   const { sidebarCollapsed, toggleCollapse } = useUIStore();
@@ -32,7 +35,7 @@ function Sidebar() {
         </div>
         <AnimatePresence>
           {!sidebarCollapsed && (
-            <motion.span
+            <MotionSpan
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
@@ -40,7 +43,7 @@ function Sidebar() {
             >
               {t("app.brand")}
               <span className="text-brand-400">.</span>
-            </motion.span>
+            </MotionSpan>
           )}
         </AnimatePresence>
       </div>
@@ -56,6 +59,7 @@ function Sidebar() {
           <NavLink
             key={item.href}
             to={item.href}
+            end={item.end ?? true}
             className={({ isActive }) =>
               classNames(
                 "group relative flex items-center rounded-2xl px-4 py-3 transition-all duration-300",
@@ -85,7 +89,7 @@ function Sidebar() {
                   </span>
                 )}
                 {isActive && (
-                  <motion.div
+                  <MotionDiv
                     layoutId="sidebar-active"
                     className="absolute left-0 h-6 w-1 rounded-r-full bg-brand-500"
                   />

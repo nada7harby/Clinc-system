@@ -302,7 +302,7 @@ function HomePage() {
                   size="lg"
                   className="group relative overflow-hidden px-8 shadow-xl shadow-brand-500/25 transition-transform duration-300 hover:scale-[1.03]"
                   as={Link}
-                  to={ROUTES.register}
+                  to={ROUTES.bookAppointment}
                 >
                   <span className="relative z-10">Book Appointment</span>
                   <span className="absolute inset-0 -z-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_60%)]" />
@@ -529,23 +529,23 @@ function HomePage() {
       </section>
 
       <section className="px-6 py-12 lg:px-12">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 rounded-[28px] bg-brand-600 px-6 py-8 text-white shadow-glow md:flex-row">
-          <div>
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-[28px] bg-brand-600 px-6 py-8 text-white shadow-glow sm:px-8 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">
               Emergency Services Available 24/7
             </p>
-            <h3 className="mt-2 text-2xl font-bold">
+            <h3 className="mt-2 max-w-2xl text-2xl font-bold text-white">
               Our emergency response team is ready to help.
             </h3>
           </div>
-          <Button
-            variant="secondary"
-            size="lg"
-            className="bg-white text-brand-700 hover:bg-brand-50"
+          <a
+            href="tel:911"
+            aria-label="Call Emergency 911"
+            className="inline-flex h-14 shrink-0 items-center justify-center gap-2 self-stretch rounded-2xl border border-white/80 bg-white px-7 text-sm font-black text-brand-700 shadow-lg shadow-brand-950/10 transition-all hover:-translate-y-0.5 hover:bg-accent-soft hover:text-brand-800 active:scale-95 sm:self-auto md:min-w-[250px]"
           >
-            <Icon name="faPhone" className="mr-2 text-sm" />
-            Call Emergency (911)
-          </Button>
+            <Icon name="faPhone" className="text-sm" />
+            <span>Call Emergency (911)</span>
+          </a>
         </div>
       </section>
 
@@ -664,7 +664,12 @@ function HomePage() {
                     >
                       View Details
                     </Link>
-                    <Button size="sm" className="h-9 px-4">
+                    <Button
+                      size="sm"
+                      className="h-9 px-4"
+                      as={Link}
+                      to={ROUTES.bookAppointment}
+                    >
                       Book Now
                     </Button>
                   </div>
