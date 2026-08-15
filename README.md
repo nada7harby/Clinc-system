@@ -1,16 +1,25 @@
-# React + Vite
+# Clinic Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A bilingual (Arabic/English) clinic management system with automatic RTL/LTR layout switching and dashboard-style data views.
 
-Currently, two official plugins are available:
+## Preview
+*(add a screenshot or GIF of the app here)*
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
+- Bilingual interface (Arabic/English) via react-i18next, with RTL/LTR layout switching
+- Dashboard data visualization with Recharts
+- Form validation with React Hook Form
+- Centralized state management via Zustand
+- Responsive layout with Tailwind CSS
 
-## React Compiler
+## Tech Stack
+React • Vite • Zustand • react-i18next • Recharts • React Hook Form • Tailwind CSS
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting Started
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Live Demo
+https://clinc-system.vercel.app
